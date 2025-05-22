@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Model Revenue Matcher</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 2rem;
+    }
+    h1 {
+      text-align: center;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+    button {
+      display: block;
+      margin: 1rem auto;
+      padding: 0.5rem 2rem;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .output {
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 1rem;
+      white-space: pre-wrap;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Model Revenue Matcher</h1>
+
+  <label for="dataBlock">Paste Data Block:</label>
+  <textarea id="dataBlock" placeholder="Ali @ali   $ 2,467.95\nAli Smiles   $ 386.86\n..."></textarea>
+
+  <label for="modelList">Paste Model List:</label>
+  <textarea id="modelList" placeholder="Ali\nAli Smiles\nAmber\n..."></textarea>
+
+  <button onclick="matchRevenue()">Generate</button>
+
+  <h3>Block 1 – Values Only:</h3>
+  <div class="output" id="block1"></div>
+
+  <h3>Block 2 – Model – $:</h3>
+  <div class="output" id="block2"></div>
+
+  <script>
+    function normalize(text) {
+      return text
+        .toLowerCase()
+        .replace(/@.*|-.+|[^a-z0-9]+/g, '')
+        .replace(/\s+/g, '')
+        .trim();
+    }
+
+    function matchRevenue() {
+      const dataBlock = document.getElementById("dataBlock").value;
+      const modelList = document.getElementById("modelList").value;
+
+      const revenueMap = {};
+      dataBlock.split(/\n+/).forEach(line => {
+        const match = line.match(/^(.*?)\s+\$\s*([0-9,.]+)/);
+        if (match) {
+          const name = normalize(match[1]);
+          const value = parseFloat(match[2].replace(/[^0-9.]/g, ''));
+          revenueMap[name] = value;
+        }
+      });
+
+      const modelNames = modelList.split(/\n+/).map(m => m.trim()).filter(Boolean);
+
+      let block1 = '';
+      let block2 = '';
+      const used = new Set();
+
+      modelNames.forEach(model => {
+        const norm = normalize(model);
+        if (used.has(norm)) return;
+        used.add(norm);
+
+        let value = revenueMap[norm];
+        if (value === undefined) {
+          const found = Object.keys(revenueMap).find(k => k.includes(norm) || norm.includes(k));
+          value = found ? revenueMap[found] : 0;
+        }
+
+        block1 += `$${value.toFixed(2)}\n`;
+        block2 += `${model}\t$${value.toFixed(2)}\n`;
+      });
+
+      document.getElementById("block1").textContent = block1;
+      document.getElementById("block2").textContent = block2;
+    }
+  </script>
+</body>
+</html>
