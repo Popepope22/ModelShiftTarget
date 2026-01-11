@@ -1,104 +1,177 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Model Revenue Matcher</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      padding: 2rem;
-    }
-    h1 {
-      text-align: center;
-    }
-    textarea {
-      width: 100%;
-      height: 150px;
-      margin-bottom: 1rem;
-      font-size: 0.9rem;
-    }
-    button {
-      display: block;
-      margin: 1rem auto;
-      padding: 0.5rem 2rem;
-      font-size: 1rem;
-      cursor: pointer;
-    }
-    .output {
-      background: #fff;
-      border: 1px solid #ccc;
-      padding: 1rem;
-      white-space: pre-wrap;
-      margin-bottom: 1rem;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Executive Shift Summary</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --dark: #0f172a; --blue: #2563eb; --green: #10b981; --orange: #f59e0b; }
+        body { background: #f1f5f9; font-family: 'Inter', sans-serif; font-size: 0.85rem; }
+        .sticky-top { background: white; border-bottom: 2px solid #e2e8f0; padding: 12px 0; }
+        
+        /* Creator Block */
+        .model-card { background: white; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 15px; overflow: hidden; }
+        .model-header { background: var(--dark); color: white; padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; }
+        .model-header.system { background: #94a3b8; }
+
+        /* Segregated Rows */
+        .staff-section { border-bottom: 1px solid #f1f5f9; padding: 10px 16px; }
+        .staff-name { font-weight: 800; color: var(--blue); text-transform: uppercase; font-size: 0.75rem; margin-bottom: 5px; display: block; }
+        
+        .category-grid { display: grid; grid-template-columns: 120px 1fr 100px; gap: 10px; align-items: center; padding: 4px 0; border-top: 1px dashed #e2e8f0; }
+        .type-label { font-weight: 600; font-size: 0.7rem; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; display: inline-block; width: 80px; text-align: center; }
+        .type-msg { background: #dbeafe; color: #1e40af; }
+        .type-tip { background: #fef3c7; color: #92400e; }
+        .type-sub { background: #dcfce7; color: #166534; }
+        
+        .log-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+        .pill { background: #f8fafc; border: 1px solid #e2e8f0; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; }
+        .net-small { font-weight: 700; color: var(--green); text-align: right; }
+
+        #drop-zone { border: 2px dashed #94a3b8; padding: 40px; text-align: center; background: white; cursor: pointer; border-radius: 8px; }
+        .hidden { display: none; }
+    </style>
 </head>
 <body>
-  <h1>Model Revenue Matcher</h1>
 
-  <label for="dataBlock">Paste Data Block:</label>
-  <textarea id="dataBlock" placeholder="Ali @ali   $ 2,467.95\nAli Smiles   $ 386.86\n..."></textarea>
+<div class="sticky-top shadow-sm">
+    <div class="container d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-2">
+            <b class="small">SHIFT:</b>
+            <input type="time" id="sT" class="form-control form-control-sm" value="05:01" style="width:105px">
+            <input type="time" id="eT" class="form-control form-control-sm" value="07:00" style="width:105px">
+            <button class="btn btn-dark btn-sm" onclick="runReport()">Update Filter</button>
+        </div>
+        <div class="text-end">
+            <small class="text-muted d-block fw-bold" style="font-size:0.6rem">GRAND TOTAL NET</small>
+            <h4 id="gTotal" class="m-0 fw-bold text-success">$0.00</h4>
+        </div>
+    </div>
+</div>
 
-  <label for="modelList">Paste Model List:</label>
-  <textarea id="modelList" placeholder="Ali\nAli Smiles\nAmber\n..."></textarea>
+<div class="container mt-4">
+    <div id="drop-zone" onclick="document.getElementById('csvFile').click()">
+        <h6 class="m-0">Click to Upload Shift CSV</h6>
+        <input type="file" id="csvFile" accept=".csv" class="hidden">
+    </div>
+    <div id="reportContent"></div>
+</div>
 
-  <button onclick="matchRevenue()">Generate</button>
+<script>
+    let rawCSV = "";
 
-  <h3>Block 1 – Values Only:</h3>
-  <div class="output" id="block1"></div>
+    document.getElementById('csvFile').addEventListener('change', function(e) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            rawCSV = ev.target.result;
+            document.getElementById('drop-zone').classList.add('hidden');
+            runReport();
+        };
+        reader.readAsText(e.target.files[0]);
+    });
 
-  <h3>Block 2 – Model – $:</h3>
-  <div class="output" id="block2"></div>
+    function runReport() {
+        if (!rawCSV) return;
+        const start = document.getElementById('sT').value;
+        const end = document.getElementById('eT').value;
+        
+        const lines = rawCSV.split(/\r?\n/);
+        const headers = lines[0].toLowerCase().split(',');
+        
+        const col = {
+            date: headers.findIndex(h => h.includes('date')),
+            staff: headers.findIndex(h => h.includes('employee') || h.includes('chatter')),
+            creator: headers.findIndex(h => h.includes('creator') || h.includes('model')),
+            gain: headers.findIndex(h => h.includes('net') || h.includes('revenue')),
+            type: headers.findIndex(h => h.includes('type'))
+        };
 
-  <script>
-    function normalize(text) {
-      return text
-        .toLowerCase()
-        .replace(/@.*|-.+|[^a-z0-9]+/g, '')
-        .replace(/\s+/g, '')
-        .trim();
+        const hierarchy = {};
+        let grandTotal = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+            const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+            if (row.length < 2) continue;
+
+            const time = (row[col.date]?.split(' ')[1]) || "";
+            const staff = row[col.staff]?.trim() || "UNASSIGNED";
+            const creator = row[col.creator]?.trim() || "Unknown";
+            const gain = parseFloat(row[col.gain]?.replace(/[^-0-9.]/g, '')) || 0;
+            const type = row[col.type]?.toLowerCase().includes('tip') ? 'TIP' : 
+                         row[col.type]?.toLowerCase().includes('message') ? 'MESSAGE' : 'OTHER';
+
+            if (isTimeValid(time, start, end)) {
+                if (!hierarchy[creator]) hierarchy[creator] = { total: 0, staff: {} };
+                if (!hierarchy[creator].staff[staff]) hierarchy[creator].staff[staff] = { total: 0, types: { MESSAGE: [], TIP: [], OTHER: [] } };
+
+                hierarchy[creator].total += gain;
+                hierarchy[creator].staff[staff].total += gain;
+                hierarchy[creator].staff[staff].types[type].push({ time, gain });
+                grandTotal += gain;
+            }
+        }
+        render(hierarchy, grandTotal);
     }
 
-    function matchRevenue() {
-      const dataBlock = document.getElementById("dataBlock").value;
-      const modelList = document.getElementById("modelList").value;
-
-      const revenueMap = {};
-      dataBlock.split(/\n+/).forEach(line => {
-        const match = line.match(/^(.*?)\s+\$\s*([0-9,.]+)/);
-        if (match) {
-          const name = normalize(match[1]);
-          const value = parseFloat(match[2].replace(/[^0-9.]/g, ''));
-          revenueMap[name] = value;
-        }
-      });
-
-      const modelNames = modelList.split(/\n+/).map(m => m.trim()).filter(Boolean);
-
-      let block1 = '';
-      let block2 = '';
-      const used = new Set();
-
-      modelNames.forEach(model => {
-        const norm = normalize(model);
-        if (used.has(norm)) return;
-        used.add(norm);
-
-        let value = revenueMap[norm];
-        if (value === undefined) {
-          const found = Object.keys(revenueMap).find(k => k.includes(norm) || norm.includes(k));
-          value = found ? revenueMap[found] : 0;
-        }
-
-        block1 += `$${value.toFixed(2)}\n`;
-        block2 += `${model}\t$${value.toFixed(2)}\n`;
-      });
-
-      document.getElementById("block1").textContent = block1;
-      document.getElementById("block2").textContent = block2;
+    function isTimeValid(t, s, e) {
+        if (!t) return false;
+        const toM = (v) => { const [h, m] = v.split(':'); return parseInt(h) * 60 + parseInt(m); };
+        const cur = toM(t);
+        return cur >= toM(s) && cur <= toM(e);
     }
-  </script>
+
+    function render(data, total) {
+        const out = document.getElementById('reportContent');
+        document.getElementById('gTotal').innerText = `$${total.toFixed(2)}`;
+        out.innerHTML = '';
+
+        // Sort: Models with assigned staff first, fully unassigned last
+        const sortedModels = Object.keys(data).sort((a, b) => {
+            const aHasStaff = Object.keys(data[a].staff).some(s => s !== "UNASSIGNED");
+            const bHasStaff = Object.keys(data[b].staff).some(s => s !== "UNASSIGNED");
+            if (aHasStaff && !bHasStaff) return -1;
+            if (!aHasStaff && bHasStaff) return 1;
+            return a.localeCompare(b);
+        });
+
+        sortedModels.forEach(mName => {
+            const m = data[mName];
+            const isSystem = !Object.keys(m.staff).some(s => s !== "UNASSIGNED");
+            
+            let html = `<div class="model-card">
+                <div class="model-header ${isSystem ? 'system' : ''}">
+                    <span><b>MODEL:</b> ${mName}</span>
+                    <span><b>NET: $${m.total.toFixed(2)}</b></span>
+                </div>`;
+            
+            // Sort Staff: Named first, UNASSIGNED last
+            const sortedStaff = Object.keys(m.staff).sort((a,b) => a === "UNASSIGNED" ? 1 : b === "UNASSIGNED" ? -1 : a.localeCompare(b));
+
+            sortedStaff.forEach(sName => {
+                const s = m.staff[sName];
+                html += `<div class="staff-section">
+                    <span class="staff-name">${sName} (Net: $${s.total.toFixed(2)})</span>`;
+                
+                ['MESSAGE', 'TIP', 'OTHER'].forEach(type => {
+                    if (s.types[type].length > 0) {
+                        const typeClass = type === 'MESSAGE' ? 'type-msg' : type === 'TIP' ? 'type-tip' : 'type-sub';
+                        const typeSum = s.types[type].reduce((acc, curr) => acc + curr.gain, 0);
+                        html += `
+                        <div class="category-grid">
+                            <div class="type-label ${typeClass}">${type}</div>
+                            <div class="log-pills">
+                                ${s.types[type].map(l => `<span class="pill">${l.time} ($${l.gain})</span>`).join('')}
+                            </div>
+                            <div class="net-small">$${typeSum.toFixed(2)}</div>
+                        </div>`;
+                    }
+                });
+                html += `</div>`;
+            });
+            html += `</div>`;
+            out.innerHTML += html;
+        });
+    }
+</script>
 </body>
 </html>
