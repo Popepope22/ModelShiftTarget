@@ -1,177 +1,188 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Executive Shift Summary</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agency Attribution Tracker v5</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --dark: #0f172a; --blue: #2563eb; --green: #10b981; --orange: #f59e0b; }
-        body { background: #f1f5f9; font-family: 'Inter', sans-serif; font-size: 0.85rem; }
-        .sticky-top { background: white; border-bottom: 2px solid #e2e8f0; padding: 12px 0; }
-        
-        /* Creator Block */
-        .model-card { background: white; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 15px; overflow: hidden; }
-        .model-header { background: var(--dark); color: white; padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; }
-        .model-header.system { background: #94a3b8; }
-
-        /* Segregated Rows */
-        .staff-section { border-bottom: 1px solid #f1f5f9; padding: 10px 16px; }
-        .staff-name { font-weight: 800; color: var(--blue); text-transform: uppercase; font-size: 0.75rem; margin-bottom: 5px; display: block; }
-        
-        .category-grid { display: grid; grid-template-columns: 120px 1fr 100px; gap: 10px; align-items: center; padding: 4px 0; border-top: 1px dashed #e2e8f0; }
-        .type-label { font-weight: 600; font-size: 0.7rem; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; display: inline-block; width: 80px; text-align: center; }
-        .type-msg { background: #dbeafe; color: #1e40af; }
-        .type-tip { background: #fef3c7; color: #92400e; }
-        .type-sub { background: #dcfce7; color: #166534; }
-        
-        .log-pills { display: flex; flex-wrap: wrap; gap: 4px; }
-        .pill { background: #f8fafc; border: 1px solid #e2e8f0; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; }
-        .net-small { font-weight: 700; color: var(--green); text-align: right; }
-
-        #drop-zone { border: 2px dashed #94a3b8; padding: 40px; text-align: center; background: white; cursor: pointer; border-radius: 8px; }
-        .hidden { display: none; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        .model-header { background-color: #f1f5f9; border-bottom: 2px solid #e2e8f0; }
+        .chatter-row { transition: all 0.2s; }
+        .metric-label { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+        .detail-row { background-color: #fcfcfd; border-left: 4px solid #6366f1; display: none; }
+        .type-pill { font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
     </style>
 </head>
-<body>
+<body class="p-4 md:p-8">
 
-<div class="sticky-top shadow-sm">
-    <div class="container d-flex align-items-center justify-content-between">
-        <div class="d-flex align-items-center gap-2">
-            <b class="small">SHIFT:</b>
-            <input type="time" id="sT" class="form-control form-control-sm" value="05:01" style="width:105px">
-            <input type="time" id="eT" class="form-control form-control-sm" value="07:00" style="width:105px">
-            <button class="btn btn-dark btn-sm" onclick="runReport()">Update Filter</button>
+    <div class="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Model & Chatter Attribution</h1>
+            <p class="text-slate-500 text-sm">Full purchase breakdown with time-stamped dropdowns.</p>
         </div>
-        <div class="text-end">
-            <small class="text-muted d-block fw-bold" style="font-size:0.6rem">GRAND TOTAL NET</small>
-            <h4 id="gTotal" class="m-0 fw-bold text-success">$0.00</h4>
+        <label class="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg shadow-sm hover:bg-indigo-700 cursor-pointer transition font-medium text-sm">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            Upload CSV
+            <input type="file" id="csvInput" accept=".csv" class="hidden">
+        </label>
+    </div>
+
+    <div class="max-w-6xl mx-auto mb-6 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+            <div>
+                <label class="metric-label mb-2 block">Start Date/Time</label>
+                <input type="datetime-local" id="startTime" class="w-full border-slate-200 rounded-lg text-sm p-2 border focus:ring-2 focus:ring-indigo-500 outline-none">
+            </div>
+            <div>
+                <label class="metric-label mb-2 block">End Date/Time</label>
+                <input type="datetime-local" id="endTime" class="w-full border-slate-200 rounded-lg text-sm p-2 border focus:ring-2 focus:ring-indigo-500 outline-none">
+            </div>
+            <button onclick="applyFilters()" class="w-full bg-slate-900 text-white py-2 rounded-lg hover:bg-black transition font-semibold text-sm">Apply Filters</button>
         </div>
     </div>
-</div>
 
-<div class="container mt-4">
-    <div id="drop-zone" onclick="document.getElementById('csvFile').click()">
-        <h6 class="m-0">Click to Upload Shift CSV</h6>
-        <input type="file" id="csvFile" accept=".csv" class="hidden">
+    <div class="max-w-6xl mx-auto card overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-200">
+                    <th class="py-4 px-6 metric-label">Model / Chatter Name</th>
+                    <th class="py-4 px-6 metric-label text-center">Msg / Tips</th>
+                    <th class="py-4 px-6 metric-label text-right">Net Revenue</th>
+                    <th class="py-4 px-6 metric-label text-center">Action</th>
+                </tr>
+            </thead>
+            <tbody id="mainTableBody">
+                <tr><td colspan="4" class="py-20 text-center text-slate-400 font-medium">Upload your CSV to view the breakdown.</td></tr>
+            </tbody>
+        </table>
     </div>
-    <div id="reportContent"></div>
-</div>
 
-<script>
-    let rawCSV = "";
+    <script>
+        let rawData = [];
 
-    document.getElementById('csvFile').addEventListener('change', function(e) {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            rawCSV = ev.target.result;
-            document.getElementById('drop-zone').classList.add('hidden');
-            runReport();
-        };
-        reader.readAsText(e.target.files[0]);
-    });
-
-    function runReport() {
-        if (!rawCSV) return;
-        const start = document.getElementById('sT').value;
-        const end = document.getElementById('eT').value;
-        
-        const lines = rawCSV.split(/\r?\n/);
-        const headers = lines[0].toLowerCase().split(',');
-        
-        const col = {
-            date: headers.findIndex(h => h.includes('date')),
-            staff: headers.findIndex(h => h.includes('employee') || h.includes('chatter')),
-            creator: headers.findIndex(h => h.includes('creator') || h.includes('model')),
-            gain: headers.findIndex(h => h.includes('net') || h.includes('revenue')),
-            type: headers.findIndex(h => h.includes('type'))
-        };
-
-        const hierarchy = {};
-        let grandTotal = 0;
-
-        for (let i = 1; i < lines.length; i++) {
-            const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-            if (row.length < 2) continue;
-
-            const time = (row[col.date]?.split(' ')[1]) || "";
-            const staff = row[col.staff]?.trim() || "UNASSIGNED";
-            const creator = row[col.creator]?.trim() || "Unknown";
-            const gain = parseFloat(row[col.gain]?.replace(/[^-0-9.]/g, '')) || 0;
-            const type = row[col.type]?.toLowerCase().includes('tip') ? 'TIP' : 
-                         row[col.type]?.toLowerCase().includes('message') ? 'MESSAGE' : 'OTHER';
-
-            if (isTimeValid(time, start, end)) {
-                if (!hierarchy[creator]) hierarchy[creator] = { total: 0, staff: {} };
-                if (!hierarchy[creator].staff[staff]) hierarchy[creator].staff[staff] = { total: 0, types: { MESSAGE: [], TIP: [], OTHER: [] } };
-
-                hierarchy[creator].total += gain;
-                hierarchy[creator].staff[staff].total += gain;
-                hierarchy[creator].staff[staff].types[type].push({ time, gain });
-                grandTotal += gain;
-            }
-        }
-        render(hierarchy, grandTotal);
-    }
-
-    function isTimeValid(t, s, e) {
-        if (!t) return false;
-        const toM = (v) => { const [h, m] = v.split(':'); return parseInt(h) * 60 + parseInt(m); };
-        const cur = toM(t);
-        return cur >= toM(s) && cur <= toM(e);
-    }
-
-    function render(data, total) {
-        const out = document.getElementById('reportContent');
-        document.getElementById('gTotal').innerText = `$${total.toFixed(2)}`;
-        out.innerHTML = '';
-
-        // Sort: Models with assigned staff first, fully unassigned last
-        const sortedModels = Object.keys(data).sort((a, b) => {
-            const aHasStaff = Object.keys(data[a].staff).some(s => s !== "UNASSIGNED");
-            const bHasStaff = Object.keys(data[b].staff).some(s => s !== "UNASSIGNED");
-            if (aHasStaff && !bHasStaff) return -1;
-            if (!aHasStaff && bHasStaff) return 1;
-            return a.localeCompare(b);
-        });
-
-        sortedModels.forEach(mName => {
-            const m = data[mName];
-            const isSystem = !Object.keys(m.staff).some(s => s !== "UNASSIGNED");
-            
-            let html = `<div class="model-card">
-                <div class="model-header ${isSystem ? 'system' : ''}">
-                    <span><b>MODEL:</b> ${mName}</span>
-                    <span><b>NET: $${m.total.toFixed(2)}</b></span>
-                </div>`;
-            
-            // Sort Staff: Named first, UNASSIGNED last
-            const sortedStaff = Object.keys(m.staff).sort((a,b) => a === "UNASSIGNED" ? 1 : b === "UNASSIGNED" ? -1 : a.localeCompare(b));
-
-            sortedStaff.forEach(sName => {
-                const s = m.staff[sName];
-                html += `<div class="staff-section">
-                    <span class="staff-name">${sName} (Net: $${s.total.toFixed(2)})</span>`;
-                
-                ['MESSAGE', 'TIP', 'OTHER'].forEach(type => {
-                    if (s.types[type].length > 0) {
-                        const typeClass = type === 'MESSAGE' ? 'type-msg' : type === 'TIP' ? 'type-tip' : 'type-sub';
-                        const typeSum = s.types[type].reduce((acc, curr) => acc + curr.gain, 0);
-                        html += `
-                        <div class="category-grid">
-                            <div class="type-label ${typeClass}">${type}</div>
-                            <div class="log-pills">
-                                ${s.types[type].map(l => `<span class="pill">${l.time} ($${l.gain})</span>`).join('')}
-                            </div>
-                            <div class="net-small">$${typeSum.toFixed(2)}</div>
-                        </div>`;
-                    }
-                });
-                html += `</div>`;
+        document.getElementById('csvInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) { processData(results.data); }
             });
-            html += `</div>`;
-            out.innerHTML += html;
         });
-    }
-</script>
+
+        function processData(data) {
+            rawData = data.map(row => {
+                const net = parseFloat((row['Net revenue'] || '0').replace(/[$,]/g, ''));
+                const dateObj = new Date(row['Date & time Europe/London']);
+                const type = (row['Type'] || '').toLowerCase();
+                let category = type.includes('tip') ? 'tip' : (type.includes('message') ? 'message' : 'other');
+
+                return {
+                    dateObj,
+                    employee: (row['Employee'] || 'Unassigned').trim(),
+                    creator: (row['Creator'] || 'Unknown').trim(),
+                    fan: (row['Fan'] || 'Anonymous').trim(),
+                    type: row['Type'],
+                    net: isNaN(net) ? 0 : net,
+                    category
+                };
+            }).filter(d => !isNaN(d.dateObj.getTime()));
+
+            if (rawData.length > 0) {
+                const dates = rawData.map(d => d.dateObj);
+                document.getElementById('startTime').value = toISO(new Date(Math.min(...dates)));
+                document.getElementById('endTime').value = toISO(new Date(Math.max(...dates)));
+            }
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const start = new Date(document.getElementById('startTime').value);
+            const end = new Date(document.getElementById('endTime').value);
+            render(rawData.filter(d => d.dateObj >= start && d.dateObj <= end));
+        }
+
+        function toggleDetails(id) {
+            const el = document.getElementById(id);
+            el.style.display = el.style.display === 'table-row' ? 'none' : 'table-row';
+        }
+
+        function render(data) {
+            const tbody = document.getElementById('mainTableBody');
+            tbody.innerHTML = '';
+
+            const models = {};
+            data.forEach(d => {
+                if (!models[d.creator]) models[d.creator] = { total: 0, chatters: {} };
+                models[d.creator].total += d.net;
+                if (!models[d.creator].chatters[d.employee]) {
+                    models[d.creator].chatters[d.employee] = { net: 0, msg: 0, tip: 0, items: [] };
+                }
+                const c = models[d.creator].chatters[d.employee];
+                c.net += d.net;
+                if(d.category === 'message') c.msg++; else if(d.category === 'tip') c.tip++;
+                c.items.push(d);
+            });
+
+            Object.entries(models).sort((a,b) => b[1].total - a[1].total).forEach(([modelName, mData], mIdx) => {
+                tbody.innerHTML += `
+                    <tr class="model-header">
+                        <td class="py-4 px-6 font-bold text-slate-800" colspan="2">${modelName}</td>
+                        <td class="py-4 px-6 text-right font-bold text-indigo-700" colspan="2">${fmt(mData.total)}</td>
+                    </tr>
+                `;
+
+                Object.entries(mData.chatters).sort((a,b) => b[1].net - a[1].net).forEach(([cName, c], cIdx) => {
+                    const rowId = `details-${mIdx}-${cIdx}`;
+                    tbody.innerHTML += `
+                        <tr class="chatter-row border-b border-slate-100">
+                            <td class="py-4 px-10 font-semibold text-slate-700">${cName}</td>
+                            <td class="py-4 px-6 text-center text-xs text-slate-500">
+                                <b>${c.msg}</b> Msg / <b>${c.tip}</b> Tips
+                            </td>
+                            <td class="py-4 px-6 text-right font-bold text-emerald-600">${fmt(c.net)}</td>
+                            <td class="py-4 px-6 text-center">
+                                <button onclick="toggleDetails('${rowId}')" class="text-xs font-bold text-indigo-600 hover:underline">View History ▼</button>
+                            </td>
+                        </tr>
+                        <tr id="${rowId}" class="detail-row">
+                            <td colspan="4" class="p-0">
+                                <div class="px-10 py-4 bg-indigo-50/30">
+                                    <table class="w-full text-xs">
+                                        <thead>
+                                            <tr class="text-slate-400 border-b border-indigo-100 uppercase tracking-tighter font-bold">
+                                                <th class="py-2 text-left">Time</th>
+                                                <th class="py-2 text-left">Fan Name</th>
+                                                <th class="py-2 text-left">Category</th>
+                                                <th class="py-2 text-right">Net</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${c.items.sort((x,y) => y.dateObj - x.dateObj).map(i => `
+                                                <tr class="border-b border-indigo-50/50">
+                                                    <td class="py-2 text-slate-500">${i.dateObj.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+                                                    <td class="py-2 font-medium text-slate-700">${i.fan}</td>
+                                                    <td class="py-2"><span class="type-pill ${i.category === 'message' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}">${i.type}</span></td>
+                                                    <td class="py-2 text-right font-bold">${fmt(i.net)}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+        }
+
+        function fmt(n) { return '$' + n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+        function toISO(d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); }
+    </script>
 </body>
 </html>
