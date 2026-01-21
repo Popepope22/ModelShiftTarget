@@ -1,35 +1,38 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agency Attribution Tracker v5</title>
+    <title>Agency Attribution Tracker v5 - High Performance</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
         .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
-        .model-header { background-color: #f1f5f9; border-bottom: 2px solid #e2e8f0; }
-        .chatter-row { transition: all 0.2s; }
+        .model-header { background-color: #f1f5f9; border-bottom: 2px solid #e2e8f0; position: sticky; top: 0; z-index: 10; }
+        .chatter-row:hover { background-color: #f8fafc; }
         .metric-label { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
         .detail-row { background-color: #fcfcfd; border-left: 4px solid #6366f1; display: none; }
         .type-pill { font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
+        /* Optimization for large lists */
+        #mainTableBody { content-visibility: auto; }
     </style>
 </head>
 <body class="p-4 md:p-8">
-
     <div class="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Model & Chatter Attribution</h1>
-            <p class="text-slate-500 text-sm">Full purchase breakdown with time-stamped dropdowns.</p>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Performance Attribution</h1>
+            <p class="text-slate-500 text-sm">Optimized for large datasets (10k+ rows).</p>
         </div>
-        <label class="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg shadow-sm hover:bg-indigo-700 cursor-pointer transition font-medium text-sm">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-            Upload CSV
-            <input type="file" id="csvInput" accept=".csv" class="hidden">
-        </label>
+        <div class="flex gap-4">
+            <label id="statusLabel" class="text-xs self-center text-slate-400"></label>
+            <label class="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg shadow-sm hover:bg-indigo-700 cursor-pointer transition font-medium text-sm">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                Upload CSV
+                <input type="file" id="csvInput" accept=".csv" class="hidden">
+            </label>
+        </div>
     </div>
 
     <div class="max-w-6xl mx-auto mb-6 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
@@ -64,47 +67,59 @@
 
     <script>
         let rawData = [];
+        const statusLabel = document.getElementById('statusLabel');
 
         document.getElementById('csvInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
+            
+            statusLabel.innerText = "Processing...";
+            
             Papa.parse(file, {
                 header: true,
                 skipEmptyLines: true,
-                complete: function(results) { processData(results.data); }
+                worker: true, // Use a worker thread for parsing large files
+                complete: function(results) {
+                    processData(results.data);
+                }
             });
         });
 
         function processData(data) {
-            rawData = data.map(row => {
-                const net = parseFloat((row['Net revenue'] || '0').replace(/[$,]/g, ''));
-                const dateObj = new Date(row['Date & time Europe/London']);
-                const type = (row['Type'] || '').toLowerCase();
-                let category = type.includes('tip') ? 'tip' : (type.includes('message') ? 'message' : 'other');
+            // Optimization: Filter out useless rows early and map only necessary fields
+            rawData = [];
+            for (let i = 0; i < data.length; i++) {
+                const row = data[i];
+                const dateStr = row['Date & time Europe/London'];
+                if (!dateStr) continue;
 
-                return {
-                    dateObj,
-                    employee: (row['Employee'] || 'Unassigned').trim(),
-                    creator: (row['Creator'] || 'Unknown').trim(),
-                    fan: (row['Fan'] || 'Anonymous').trim(),
+                const net = parseFloat((row['Net revenue'] || '0').replace(/[$,]/g, ''));
+                const type = (row['Type'] || '').toLowerCase();
+                
+                rawData.push({
+                    t: new Date(dateStr).getTime(), // Store timestamp as number (faster)
+                    e: (row['Employee'] || 'Unassigned').trim(),
+                    m: (row['Creator'] || 'Unknown').trim(),
+                    f: (row['Fan'] || 'Anonymous').trim(),
                     type: row['Type'],
-                    net: isNaN(net) ? 0 : net,
-                    category
-                };
-            }).filter(d => !isNaN(d.dateObj.getTime()));
+                    n: isNaN(net) ? 0 : net,
+                    cat: type.includes('tip') ? 'tip' : (type.includes('message') ? 'message' : 'other')
+                });
+            }
 
             if (rawData.length > 0) {
-                const dates = rawData.map(d => d.dateObj);
-                document.getElementById('startTime').value = toISO(new Date(Math.min(...dates)));
-                document.getElementById('endTime').value = toISO(new Date(Math.max(...dates)));
+                const times = rawData.map(d => d.t);
+                document.getElementById('startTime').value = toISO(new Date(Math.min(...times)));
+                document.getElementById('endTime').value = toISO(new Date(Math.max(...times)));
             }
             applyFilters();
         }
 
         function applyFilters() {
-            const start = new Date(document.getElementById('startTime').value);
-            const end = new Date(document.getElementById('endTime').value);
-            render(rawData.filter(d => d.dateObj >= start && d.dateObj <= end));
+            const start = new Date(document.getElementById('startTime').value).getTime();
+            const end = new Date(document.getElementById('endTime').value).getTime();
+            const filtered = rawData.filter(d => d.t >= start && d.t <= end);
+            render(filtered);
         }
 
         function toggleDetails(id) {
@@ -115,70 +130,75 @@
         function render(data) {
             const tbody = document.getElementById('mainTableBody');
             tbody.innerHTML = '';
+            statusLabel.innerText = `Total: ${data.length} records`;
 
-            const models = {};
+            const models = new Map();
+            
+            // Optimization: Using Map for faster lookups
             data.forEach(d => {
-                if (!models[d.creator]) models[d.creator] = { total: 0, chatters: {} };
-                models[d.creator].total += d.net;
-                if (!models[d.creator].chatters[d.employee]) {
-                    models[d.creator].chatters[d.employee] = { net: 0, msg: 0, tip: 0, items: [] };
+                if (!models.has(d.m)) models.set(d.m, { total: 0, chatters: new Map() });
+                const mData = models.get(d.m);
+                mData.total += d.n;
+
+                if (!mData.chatters.has(d.e)) {
+                    mData.chatters.set(d.e, { net: 0, msg: 0, tip: 0, items: [] });
                 }
-                const c = models[d.creator].chatters[d.employee];
-                c.net += d.net;
-                if(d.category === 'message') c.msg++; else if(d.category === 'tip') c.tip++;
+                const c = mData.chatters.get(d.e);
+                c.net += d.n;
+                if(d.cat === 'message') c.msg++; else if(d.cat === 'tip') c.tip++;
                 c.items.push(d);
             });
 
-            Object.entries(models).sort((a,b) => b[1].total - a[1].total).forEach(([modelName, mData], mIdx) => {
-                tbody.innerHTML += `
-                    <tr class="model-header">
-                        <td class="py-4 px-6 font-bold text-slate-800" colspan="2">${modelName}</td>
-                        <td class="py-4 px-6 text-right font-bold text-indigo-700" colspan="2">${fmt(mData.total)}</td>
-                    </tr>
-                `;
+            const fragment = document.createDocumentFragment();
+            const sortedModels = [...models.entries()].sort((a,b) => b[1].total - a[1].total);
 
-                Object.entries(mData.chatters).sort((a,b) => b[1].net - a[1].net).forEach(([cName, c], cIdx) => {
+            sortedModels.forEach(([modelName, mData], mIdx) => {
+                const mRow = document.createElement('tr');
+                mRow.className = 'model-header';
+                mRow.innerHTML = `<td class="py-4 px-6 font-bold text-slate-800" colspan="2">${modelName}</td>
+                                  <td class="py-4 px-6 text-right font-bold text-indigo-700" colspan="2">${fmt(mData.total)}</td>`;
+                fragment.appendChild(mRow);
+
+                const sortedChatters = [...mData.chatters.entries()].sort((a,b) => b[1].net - a[1].net);
+                sortedChatters.forEach(([cName, c], cIdx) => {
                     const rowId = `details-${mIdx}-${cIdx}`;
-                    tbody.innerHTML += `
-                        <tr class="chatter-row border-b border-slate-100">
-                            <td class="py-4 px-10 font-semibold text-slate-700">${cName}</td>
-                            <td class="py-4 px-6 text-center text-xs text-slate-500">
-                                <b>${c.msg}</b> Msg / <b>${c.tip}</b> Tips
-                            </td>
-                            <td class="py-4 px-6 text-right font-bold text-emerald-600">${fmt(c.net)}</td>
-                            <td class="py-4 px-6 text-center">
-                                <button onclick="toggleDetails('${rowId}')" class="text-xs font-bold text-indigo-600 hover:underline">View History ▼</button>
-                            </td>
-                        </tr>
-                        <tr id="${rowId}" class="detail-row">
-                            <td colspan="4" class="p-0">
-                                <div class="px-10 py-4 bg-indigo-50/30">
-                                    <table class="w-full text-xs">
-                                        <thead>
-                                            <tr class="text-slate-400 border-b border-indigo-100 uppercase tracking-tighter font-bold">
-                                                <th class="py-2 text-left">Time</th>
-                                                <th class="py-2 text-left">Fan Name</th>
-                                                <th class="py-2 text-left">Category</th>
-                                                <th class="py-2 text-right">Net</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${c.items.sort((x,y) => y.dateObj - x.dateObj).map(i => `
-                                                <tr class="border-b border-indigo-50/50">
-                                                    <td class="py-2 text-slate-500">${i.dateObj.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                                                    <td class="py-2 font-medium text-slate-700">${i.fan}</td>
-                                                    <td class="py-2"><span class="type-pill ${i.category === 'message' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}">${i.type}</span></td>
-                                                    <td class="py-2 text-right font-bold">${fmt(i.net)}</td>
-                                                </tr>
-                                            `).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
+                    const cRow = document.createElement('tr');
+                    cRow.className = 'chatter-row border-b border-slate-100';
+                    cRow.innerHTML = `
+                        <td class="py-4 px-10 font-semibold text-slate-700">${cName}</td>
+                        <td class="py-4 px-6 text-center text-xs text-slate-500"><b>${c.msg}</b> Msg / <b>${c.tip}</b> Tips</td>
+                        <td class="py-4 px-6 text-right font-bold text-emerald-600">${fmt(c.net)}</td>
+                        <td class="py-4 px-6 text-center"><button onclick="toggleDetails('${rowId}')" class="text-xs font-bold text-indigo-600 hover:underline">View History ▼</button></td>`;
+                    fragment.appendChild(cRow);
+
+                    const dRow = document.createElement('tr');
+                    dRow.id = rowId;
+                    dRow.className = 'detail-row';
+                    // We only render the inner table HTML when needed or in one block to save memory
+                    dRow.innerHTML = `<td colspan="4" class="p-0">
+                        <div class="px-10 py-4 bg-indigo-50/30">
+                            <table class="w-full text-xs">
+                                <thead><tr class="text-slate-400 border-b border-indigo-100 uppercase tracking-tighter font-bold">
+                                    <th class="py-2 text-left">Time</th><th class="py-2 text-left">Fan Name</th><th class="py-2 text-left">Category</th><th class="py-2 text-right">Net</th>
+                                </tr></thead>
+                                <tbody>
+                                    ${c.items.slice(0, 50).map(i => `
+                                        <tr class="border-b border-indigo-50/50">
+                                            <td class="py-2 text-slate-500">${new Date(i.t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+                                            <td class="py-2 font-medium text-slate-700">${i.f}</td>
+                                            <td class="py-2"><span class="type-pill ${i.cat === 'message' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}">${i.type}</span></td>
+                                            <td class="py-2 text-right font-bold">${fmt(i.n)}</td>
+                                        </tr>`).join('')}
+                                        ${c.items.length > 50 ? `<tr><td colspan="4" class="text-center py-2 text-slate-400">Showing first 50 transactions...</td></tr>` : ''}
+                                </tbody>
+                            </table>
+                        </div></td>`;
+                    fragment.appendChild(dRow);
                 });
             });
+            
+            // Perform one single DOM update
+            tbody.appendChild(fragment);
         }
 
         function fmt(n) { return '$' + n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
