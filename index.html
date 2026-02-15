@@ -1,29 +1,28 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agency Tracker v15 - Eye-Ease Full Width</title>
+    <title>Agency Tracker v16 - Full Decimals & Eye-Ease</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 20px; }
         
-        /* THE FULL PAGE FIX */
+        /* 100% SCREEN WIDTH */
         .app-wrapper { width: 100%; max-width: 100%; margin: 0 auto; }
         
-        /* ZEBRA STRIPING - Eye Friendly */
-        .model-group:nth-child(even) { background-color: #f1f5f9; } /* Soft Slate Blue-Grey */
+        /* ZEBRA STRIPING - Eye Friendly Slate-50 */
+        .model-group:nth-child(even) { background-color: #f1f5f9; } 
         .model-group:nth-child(odd) { background-color: #ffffff; }
 
         .result-grid {
             display: grid;
-            /* Column 1: Name, Column 2: The 4 Boxes, Column 3: Revenue, Column 4: Actions */
+            /* Proportions: Name(20%), Boxes(55%), Revenue(15%), Actions(10%) */
             grid-template-columns: 20% 55% 15% 10%;
             align-items: center;
-            padding: 1.25rem 2rem;
+            padding: 1.25rem 2.5rem;
             width: 100%;
             border-bottom: 1px solid #e2e8f0;
         }
@@ -31,7 +30,7 @@
         .header-grid {
             background-color: #1e293b;
             color: #f8fafc;
-            font-weight: 700;
+            font-weight: 800;
             text-transform: uppercase;
             font-size: 11px;
             letter-spacing: 0.05em;
@@ -42,24 +41,24 @@
         }
 
         /* Q-Pill Design */
-        .q-container { display: flex; gap: 10px; width: 100%; }
+        .q-container { display: flex; gap: 8px; width: 100%; }
         .q-pill {
-            flex: 1; /* Makes all 4 boxes equal width filling the 55% space */
+            flex: 1; 
             background: white;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
-            padding: 8px;
+            padding: 10px 4px;
             text-align: center;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
         }
 
         .q-label { font-size: 9px; font-weight: 800; color: #94a3b8; margin-bottom: 4px; }
-        .val-m { color: #2563eb; font-weight: 700; font-size: 12px; } 
-        .val-t { color: #059669; font-weight: 700; font-size: 12px; }
-        .divider { color: #cbd5e1; margin: 0 4px; font-weight: 300; }
+        .val-m { color: #2563eb; font-weight: 700; font-size: 11px; } 
+        .val-t { color: #059669; font-weight: 700; font-size: 11px; }
+        .divider { color: #cbd5e1; margin: 0 2px; font-weight: 300; }
 
-        .chatter-row { background-color: rgba(255,255,255,0.4); }
-        .detail-pane { display: none; background: #ffffff; grid-column: span 4; padding: 15px 40px; border-top: 1px solid #e2e8f0; }
+        .chatter-row { background-color: rgba(255,255,255,0.3); }
+        .detail-pane { display: none; background: #ffffff; grid-column: span 4; padding: 20px 50px; border-top: 1px solid #e2e8f0; }
         
         input, select, textarea { border: 1px solid #e2e8f0 !important; }
     </style>
@@ -72,7 +71,7 @@
                 <div class="flex flex-wrap gap-6 items-end mb-6">
                     <div class="flex-1 min-w-[240px]">
                         <label class="block text-[11px] font-bold text-slate-400 uppercase mb-2">Shift Template</label>
-                        <select id="timePresetSelect" onchange="loadPresets(this.value)" class="w-full rounded-xl p-3 text-sm bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
+                        <select id="timePresetSelect" onchange="loadPresets(this.value)" class="w-full rounded-xl p-3 text-sm bg-slate-50 outline-none">
                             <option value="">-- Choose Shift --</option>
                             <option value="bst-shift1">BST Shift 1 (05:01-13:00)</option>
                             <option value="bst-shift2">BST Shift 2 (13:01-21:00)</option>
@@ -86,52 +85,50 @@
                         <label class="block text-[11px] font-bold text-slate-400 uppercase mb-2">Target Date</label>
                         <input type="date" id="baseDate" class="w-full rounded-xl p-3 text-sm bg-slate-50 outline-none" onchange="updateQuarterDates()">
                     </div>
-                    <div class="flex gap-4">
-                        <label class="flex items-center px-5 py-3 bg-blue-600 text-white rounded-xl font-bold cursor-pointer hover:bg-blue-700 transition">
-                            LOAD DATA <input type="file" id="csvInput" accept=".csv" class="hidden">
-                        </label>
-                    </div>
+                    <label class="flex items-center px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold cursor-pointer hover:bg-indigo-700 transition">
+                        UPLOAD CSV <input type="file" id="csvInput" accept=".csv" class="hidden">
+                    </label>
                 </div>
 
                 <div id="quarterInputContainer" class="grid grid-cols-4 gap-4">
                     <div class="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
                         <span class="text-[9px] font-black text-blue-500 uppercase block mb-2">Q1 Window</span>
-                        <input type="datetime-local" id="q1Start" class="w-full text-[10px] p-1.5 rounded mb-1 border shadow-sm">
-                        <input type="datetime-local" id="q1End" class="w-full text-[10px] p-1.5 rounded border shadow-sm">
+                        <input type="datetime-local" id="q1Start" class="w-full text-[10px] p-2 rounded mb-1 border shadow-sm">
+                        <input type="datetime-local" id="q1End" class="w-full text-[10px] p-2 rounded border shadow-sm">
                     </div>
                     <div class="p-3 bg-amber-50/50 rounded-xl border border-amber-100">
                         <span class="text-[9px] font-black text-amber-500 uppercase block mb-2">Q2 Window</span>
-                        <input type="datetime-local" id="q2Start" class="w-full text-[10px] p-1.5 rounded mb-1 border shadow-sm">
-                        <input type="datetime-local" id="q2End" class="w-full text-[10px] p-1.5 rounded border shadow-sm">
+                        <input type="datetime-local" id="q2Start" class="w-full text-[10px] p-2 rounded mb-1 border shadow-sm">
+                        <input type="datetime-local" id="q2End" class="w-full text-[10px] p-2 rounded border shadow-sm">
                     </div>
                     <div class="p-3 bg-cyan-50/50 rounded-xl border border-cyan-100">
                         <span class="text-[9px] font-black text-cyan-500 uppercase block mb-2">Q3 Window</span>
-                        <input type="datetime-local" id="q3Start" class="w-full text-[10px] p-1.5 rounded mb-1 border shadow-sm">
-                        <input type="datetime-local" id="q3End" class="w-full text-[10px] p-1.5 rounded border shadow-sm">
+                        <input type="datetime-local" id="q3Start" class="w-full text-[10px] p-2 rounded mb-1 border shadow-sm">
+                        <input type="datetime-local" id="q3End" class="w-full text-[10px] p-2 rounded border shadow-sm">
                     </div>
                     <div class="p-3 bg-rose-50/50 rounded-xl border border-rose-100">
                         <span class="text-[9px] font-black text-rose-500 uppercase block mb-2">Q4 Window</span>
-                        <input type="datetime-local" id="q4Start" class="w-full text-[10px] p-1.5 rounded mb-1 border shadow-sm">
-                        <input type="datetime-local" id="q4End" class="w-full text-[10px] p-1.5 rounded border shadow-sm">
+                        <input type="datetime-local" id="q4Start" class="w-full text-[10px] p-2 rounded mb-1 border shadow-sm">
+                        <input type="datetime-local" id="q4End" class="w-full text-[10px] p-2 rounded border shadow-sm">
                     </div>
                 </div>
             </div>
 
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <label class="block text-[11px] font-bold text-indigo-500 uppercase mb-2">Model Sort Sequence</label>
-                <textarea id="modelFilter" placeholder="Paste list to set order..." class="w-full h-[145px] text-xs p-3 rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-500" oninput="applyFilters()"></textarea>
+                <label class="block text-[11px] font-bold text-indigo-500 uppercase mb-2">Custom Model Order</label>
+                <textarea id="modelFilter" placeholder="Paste names in order..." class="w-full h-[155px] text-xs p-3 rounded-xl bg-slate-50 outline-none font-medium" oninput="applyFilters()"></textarea>
             </div>
         </div>
 
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="result-grid header-grid">
                 <div>Model Name / Chatter</div>
-                <div>Quarterly Performance Breakdown</div>
+                <div>Quarterly Breakdown (Msg | Tips)</div>
                 <div class="text-right">Net Revenue</div>
                 <div class="text-center">Action</div>
             </div>
             <div id="mainTableBody">
-                <div class="py-32 text-center text-slate-300 font-bold uppercase tracking-widest">Awaiting CSV Upload...</div>
+                <div class="py-32 text-center text-slate-300 font-bold uppercase tracking-widest">Waiting for Data...</div>
             </div>
         </div>
     </div>
@@ -252,7 +249,7 @@
                     <div class="result-grid">
                         <div class="font-extrabold text-slate-900 text-lg uppercase tracking-tight">${name}</div>
                         <div><div class="q-container">${genQ(mData.qStats)}</div></div>
-                        <div class="text-right font-black text-blue-600 text-2xl tracking-tighter">$${mData.total.toLocaleString()}</div>
+                        <div class="text-right font-black text-indigo-600 text-2xl">$${fmt(mData.total)}</div>
                         <div class="text-center"><span class="text-[9px] font-bold text-slate-400 border border-slate-200 px-2 py-1 rounded">MODEL</span></div>
                     </div>`;
 
@@ -261,14 +258,14 @@
                     const cRow = document.createElement('div');
                     cRow.className = `result-grid chatter-row`;
                     cRow.innerHTML = `
-                        <div class="pl-10 font-semibold text-slate-500 text-sm italic">${cName}</div>
-                        <div><div class="q-container scale-90 origin-left">${genQ(c.qStats)}</div></div>
-                        <div class="text-right font-bold text-emerald-600 text-lg">$${c.net.toLocaleString()}</div>
-                        <div class="text-center"><button onclick="toggle('${rid}')" class="text-[8px] font-black uppercase text-indigo-500 hover:underline">History</button></div>
+                        <div class="pl-12 font-semibold text-slate-500 text-sm italic">${cName}</div>
+                        <div><div class="q-container scale-95 origin-left">${genQ(c.qStats)}</div></div>
+                        <div class="text-right font-bold text-emerald-600 text-lg">$${fmt(c.net)}</div>
+                        <div class="text-center"><button onclick="toggle('${rid}')" class="text-[8px] font-black uppercase text-slate-400 hover:text-indigo-500 transition">History</button></div>
                         <div id="${rid}" class="detail-pane">
                             <table class="w-full text-[10px] text-slate-500">
-                                <tr class="border-b font-bold"><th class="text-left py-1">Quarter</th><th class="text-left py-1">Fan</th><th class="text-right py-1">Amount</th></tr>
-                                ${c.items.map(i => `<tr class="border-b"><td>Q${i.qIdx+1}</td><td>${i.f}</td><td class="text-right font-bold text-indigo-600">$${i.n}</td></tr>`).join('')}
+                                <tr class="border-b font-bold"><th class="text-left py-2">Quarter</th><th class="text-left py-2">Fan</th><th class="text-right py-2">Amount</th></tr>
+                                ${c.items.map(i => `<tr class="border-b"><td class="py-1">Q${i.qIdx+1}</td><td>${i.f}</td><td class="text-right font-bold text-indigo-600">$${fmt(i.n)}</td></tr>`).join('')}
                             </table>
                         </div>`;
                     mGroup.appendChild(cRow);
@@ -277,17 +274,20 @@
             });
         }
 
+        // UPDATED: Now shows full decimals inside the Q boxes
         function genQ(stats) {
             return stats.map((q, i) => `
                 <div class="q-pill">
-                    <div class="q-label">Q${i+1}</div>
+                    <div class="q-label">QUARTER ${i+1}</div>
                     <div class="flex items-center justify-center">
-                        <span class="val-m">$${Math.round(q[0])}</span>
+                        <span class="val-m">${fmt(q[0])}</span>
                         <span class="divider">/</span>
-                        <span class="val-t">$${Math.round(q[1])}</span>
+                        <span class="val-t">${fmt(q[1])}</span>
                     </div>
                 </div>`).join('');
         }
+
+        function fmt(n) { return n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
 
         function toggle(id) {
             const el = document.getElementById(id);
