@@ -1,208 +1,298 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agency Attribution Tracker v5 - High Performance</title>
+    <title>Agency Tracker v15 - Eye-Ease Full Width</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
-        .model-header { background-color: #f1f5f9; border-bottom: 2px solid #e2e8f0; position: sticky; top: 0; z-index: 10; }
-        .chatter-row:hover { background-color: #f8fafc; }
-        .metric-label { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
-        .detail-row { background-color: #fcfcfd; border-left: 4px solid #6366f1; display: none; }
-        .type-pill { font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
-        /* Optimization for large lists */
-        #mainTableBody { content-visibility: auto; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 20px; }
+        
+        /* THE FULL PAGE FIX */
+        .app-wrapper { width: 100%; max-width: 100%; margin: 0 auto; }
+        
+        /* ZEBRA STRIPING - Eye Friendly */
+        .model-group:nth-child(even) { background-color: #f1f5f9; } /* Soft Slate Blue-Grey */
+        .model-group:nth-child(odd) { background-color: #ffffff; }
+
+        .result-grid {
+            display: grid;
+            /* Column 1: Name, Column 2: The 4 Boxes, Column 3: Revenue, Column 4: Actions */
+            grid-template-columns: 20% 55% 15% 10%;
+            align-items: center;
+            padding: 1.25rem 2rem;
+            width: 100%;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .header-grid {
+            background-color: #1e293b;
+            color: #f8fafc;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.05em;
+            border-radius: 12px 12px 0 0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        /* Q-Pill Design */
+        .q-container { display: flex; gap: 10px; width: 100%; }
+        .q-pill {
+            flex: 1; /* Makes all 4 boxes equal width filling the 55% space */
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .q-label { font-size: 9px; font-weight: 800; color: #94a3b8; margin-bottom: 4px; }
+        .val-m { color: #2563eb; font-weight: 700; font-size: 12px; } 
+        .val-t { color: #059669; font-weight: 700; font-size: 12px; }
+        .divider { color: #cbd5e1; margin: 0 4px; font-weight: 300; }
+
+        .chatter-row { background-color: rgba(255,255,255,0.4); }
+        .detail-pane { display: none; background: #ffffff; grid-column: span 4; padding: 15px 40px; border-top: 1px solid #e2e8f0; }
+        
+        input, select, textarea { border: 1px solid #e2e8f0 !important; }
     </style>
 </head>
-<body class="p-4 md:p-8">
-    <div class="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
-        <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Performance Attribution</h1>
-            <p class="text-slate-500 text-sm">Optimized for large datasets (10k+ rows).</p>
-        </div>
-        <div class="flex gap-4">
-            <label id="statusLabel" class="text-xs self-center text-slate-400"></label>
-            <label class="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg shadow-sm hover:bg-indigo-700 cursor-pointer transition font-medium text-sm">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                Upload CSV
-                <input type="file" id="csvInput" accept=".csv" class="hidden">
-            </label>
-        </div>
-    </div>
+<body>
 
-    <div class="max-w-6xl mx-auto mb-6 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-            <div>
-                <label class="metric-label mb-2 block">Start Date/Time</label>
-                <input type="datetime-local" id="startTime" class="w-full border-slate-200 rounded-lg text-sm p-2 border focus:ring-2 focus:ring-indigo-500 outline-none">
-            </div>
-            <div>
-                <label class="metric-label mb-2 block">End Date/Time</label>
-                <input type="datetime-local" id="endTime" class="w-full border-slate-200 rounded-lg text-sm p-2 border focus:ring-2 focus:ring-indigo-500 outline-none">
-            </div>
-            <button onclick="applyFilters()" class="w-full bg-slate-900 text-white py-2 rounded-lg hover:bg-black transition font-semibold text-sm">Apply Filters</button>
-        </div>
-    </div>
+    <div class="app-wrapper">
+        <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-8">
+            <div class="xl:col-span-3 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex flex-wrap gap-6 items-end mb-6">
+                    <div class="flex-1 min-w-[240px]">
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-2">Shift Template</label>
+                        <select id="timePresetSelect" onchange="loadPresets(this.value)" class="w-full rounded-xl p-3 text-sm bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">-- Choose Shift --</option>
+                            <option value="bst-shift1">BST Shift 1 (05:01-13:00)</option>
+                            <option value="bst-shift2">BST Shift 2 (13:01-21:00)</option>
+                            <option value="bst-shift3">BST Shift 3 (21:01-05:00)</option>
+                            <option value="pht-shift1">PHT Shift 1 (13:01-21:00)</option>
+                            <option value="pht-shift2">PHT Shift 2 (21:01-05:00)</option>
+                            <option value="pht-shift3">PHT Shift 3 (05:01-13:00)</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-2">Target Date</label>
+                        <input type="date" id="baseDate" class="w-full rounded-xl p-3 text-sm bg-slate-50 outline-none" onchange="updateQuarterDates()">
+                    </div>
+                    <div class="flex gap-4">
+                        <label class="flex items-center px-5 py-3 bg-blue-600 text-white rounded-xl font-bold cursor-pointer hover:bg-blue-700 transition">
+                            LOAD DATA <input type="file" id="csvInput" accept=".csv" class="hidden">
+                        </label>
+                    </div>
+                </div>
 
-    <div class="max-w-6xl mx-auto card overflow-hidden">
-        <table class="w-full text-left border-collapse">
-            <thead>
-                <tr class="bg-slate-50 border-b border-slate-200">
-                    <th class="py-4 px-6 metric-label">Model / Chatter Name</th>
-                    <th class="py-4 px-6 metric-label text-center">Msg / Tips</th>
-                    <th class="py-4 px-6 metric-label text-right">Net Revenue</th>
-                    <th class="py-4 px-6 metric-label text-center">Action</th>
-                </tr>
-            </thead>
-            <tbody id="mainTableBody">
-                <tr><td colspan="4" class="py-20 text-center text-slate-400 font-medium">Upload your CSV to view the breakdown.</td></tr>
-            </tbody>
-        </table>
+                <div id="quarterInputContainer" class="grid grid-cols-4 gap-4">
+                    <div class="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                        <span class="text-[9px] font-black text-blue-500 uppercase block mb-2">Q1 Window</span>
+                        <input type="datetime-local" id="q1Start" class="w-full text-[10px] p-1.5 rounded mb-1 border shadow-sm">
+                        <input type="datetime-local" id="q1End" class="w-full text-[10px] p-1.5 rounded border shadow-sm">
+                    </div>
+                    <div class="p-3 bg-amber-50/50 rounded-xl border border-amber-100">
+                        <span class="text-[9px] font-black text-amber-500 uppercase block mb-2">Q2 Window</span>
+                        <input type="datetime-local" id="q2Start" class="w-full text-[10px] p-1.5 rounded mb-1 border shadow-sm">
+                        <input type="datetime-local" id="q2End" class="w-full text-[10px] p-1.5 rounded border shadow-sm">
+                    </div>
+                    <div class="p-3 bg-cyan-50/50 rounded-xl border border-cyan-100">
+                        <span class="text-[9px] font-black text-cyan-500 uppercase block mb-2">Q3 Window</span>
+                        <input type="datetime-local" id="q3Start" class="w-full text-[10px] p-1.5 rounded mb-1 border shadow-sm">
+                        <input type="datetime-local" id="q3End" class="w-full text-[10px] p-1.5 rounded border shadow-sm">
+                    </div>
+                    <div class="p-3 bg-rose-50/50 rounded-xl border border-rose-100">
+                        <span class="text-[9px] font-black text-rose-500 uppercase block mb-2">Q4 Window</span>
+                        <input type="datetime-local" id="q4Start" class="w-full text-[10px] p-1.5 rounded mb-1 border shadow-sm">
+                        <input type="datetime-local" id="q4End" class="w-full text-[10px] p-1.5 rounded border shadow-sm">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <label class="block text-[11px] font-bold text-indigo-500 uppercase mb-2">Model Sort Sequence</label>
+                <textarea id="modelFilter" placeholder="Paste list to set order..." class="w-full h-[145px] text-xs p-3 rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-500" oninput="applyFilters()"></textarea>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="result-grid header-grid">
+                <div>Model Name / Chatter</div>
+                <div>Quarterly Performance Breakdown</div>
+                <div class="text-right">Net Revenue</div>
+                <div class="text-center">Action</div>
+            </div>
+            <div id="mainTableBody">
+                <div class="py-32 text-center text-slate-300 font-bold uppercase tracking-widest">Awaiting CSV Upload...</div>
+            </div>
+        </div>
     </div>
 
     <script>
         let rawData = [];
-        const statusLabel = document.getElementById('statusLabel');
+        const SHIFT_PRESETS = {
+            "bst-shift1": [[5,1,7,0],[7,1,9,0],[9,1,11,0],[11,1,13,0]],
+            "bst-shift2": [[13,1,15,0],[15,1,17,0],[17,1,19,0],[19,1,21,0]],
+            "bst-shift3": [[21,1,23,0],[23,1,1,0],[1,1,3,0],[3,1,5,0]],
+            "pht-shift1": [[13,1,15,0],[15,1,17,0],[17,1,19,0],[19,1,21,0]],
+            "pht-shift2": [[21,1,23,0],[23,1,1,0],[1,1,3,0],[3,1,5,0]],
+            "pht-shift3": [[5,1,7,0],[7,1,9,0],[9,1,11,0],[11,1,13,0]]
+        };
+
+        function loadPresets(val) { if (val) updateQuarterDates(); }
+        function toISO(d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); }
+
+        function updateQuarterDates() {
+            const shiftKey = document.getElementById('timePresetSelect').value;
+            const baseDateVal = document.getElementById('baseDate').value;
+            if (!shiftKey || !baseDateVal) return;
+            const quarters = SHIFT_PRESETS[shiftKey];
+            const [y, m, d] = baseDateVal.split('-').map(Number);
+            quarters.forEach((q, idx) => {
+                let start = new Date(y, m - 1, d, q[0], q[1]);
+                let end = new Date(y, m - 1, d, q[2], q[3]);
+                if (idx > 0) {
+                    const prevStart = new Date(document.getElementById(`q${idx}Start`).value);
+                    if (start < prevStart) start.setDate(start.getDate() + 1);
+                }
+                if (end <= start) end.setDate(end.getDate() + 1);
+                document.getElementById(`q${idx+1}Start`).value = toISO(start);
+                document.getElementById(`q${idx+1}End`).value = toISO(end);
+            });
+            applyFilters();
+        }
 
         document.getElementById('csvInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-            
-            statusLabel.innerText = "Processing...";
-            
             Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                worker: true, // Use a worker thread for parsing large files
-                complete: function(results) {
-                    processData(results.data);
-                }
+                header: true, skipEmptyLines: true,
+                complete: function(results) { processData(results.data); }
             });
         });
 
         function processData(data) {
-            // Optimization: Filter out useless rows early and map only necessary fields
-            rawData = [];
-            for (let i = 0; i < data.length; i++) {
-                const row = data[i];
+            rawData = data.map(row => {
                 const dateStr = row['Date & time Europe/London'];
-                if (!dateStr) continue;
-
+                if (!dateStr) return null;
                 const net = parseFloat((row['Net revenue'] || '0').replace(/[$,]/g, ''));
-                const type = (row['Type'] || '').toLowerCase();
-                
-                rawData.push({
-                    t: new Date(dateStr).getTime(), // Store timestamp as number (faster)
-                    e: (row['Employee'] || 'Unassigned').trim(),
+                let emp = (row['Employee'] || '').trim();
+                return {
+                    t: new Date(dateStr.replace(' Europe/London', '')).getTime(),
+                    e: emp === '' ? 'Unassigned' : emp,
                     m: (row['Creator'] || 'Unknown').trim(),
                     f: (row['Fan'] || 'Anonymous').trim(),
-                    type: row['Type'],
                     n: isNaN(net) ? 0 : net,
-                    cat: type.includes('tip') ? 'tip' : (type.includes('message') ? 'message' : 'other')
-                });
-            }
-
+                    cat: (row['Type'] || '').toLowerCase().includes('tip') ? 'tip' : 'message'
+                };
+            }).filter(x => x);
             if (rawData.length > 0) {
-                const times = rawData.map(d => d.t);
-                document.getElementById('startTime').value = toISO(new Date(Math.min(...times)));
-                document.getElementById('endTime').value = toISO(new Date(Math.max(...times)));
+                document.getElementById('baseDate').value = new Date(rawData[0].t).toISOString().split('T')[0];
+                updateQuarterDates();
             }
-            applyFilters();
         }
 
         function applyFilters() {
-            const start = new Date(document.getElementById('startTime').value).getTime();
-            const end = new Date(document.getElementById('endTime').value).getTime();
-            const filtered = rawData.filter(d => d.t >= start && d.t <= end);
-            render(filtered);
+            const getQ = (id) => new Date(document.getElementById(id).value).getTime();
+            const ranges = [
+                {s: getQ('q1Start'), e: getQ('q1End')}, {s: getQ('q2Start'), e: getQ('q2End')},
+                {s: getQ('q3Start'), e: getQ('q3End')}, {s: getQ('q4Start'), e: getQ('q4End')}
+            ];
+            const bulkText = document.getElementById('modelFilter').value;
+            const bulkList = bulkText.split('\n').map(x => x.trim()).filter(x => x);
+
+            const filtered = rawData.filter(d => {
+                const qIdx = ranges.findIndex(r => d.t >= r.s && d.t <= r.e);
+                if (qIdx === -1) return false;
+                d.qIdx = qIdx;
+                const bulkMatch = bulkList.length === 0 || bulkList.some(b => b.toLowerCase() === d.m.toLowerCase());
+                return bulkMatch;
+            });
+            render(filtered, bulkList);
         }
 
-        function toggleDetails(id) {
-            const el = document.getElementById(id);
-            el.style.display = el.style.display === 'table-row' ? 'none' : 'table-row';
-        }
-
-        function render(data) {
-            const tbody = document.getElementById('mainTableBody');
-            tbody.innerHTML = '';
-            statusLabel.innerText = `Total: ${data.length} records`;
-
+        function render(data, bulkList) {
+            const container = document.getElementById('mainTableBody');
+            container.innerHTML = '';
             const models = new Map();
-            
-            // Optimization: Using Map for faster lookups
-            data.forEach(d => {
-                if (!models.has(d.m)) models.set(d.m, { total: 0, chatters: new Map() });
-                const mData = models.get(d.m);
-                mData.total += d.n;
 
-                if (!mData.chatters.has(d.e)) {
-                    mData.chatters.set(d.e, { net: 0, msg: 0, tip: 0, items: [] });
-                }
-                const c = mData.chatters.get(d.e);
+            data.forEach(d => {
+                if (!models.has(d.m)) models.set(d.m, { total: 0, qStats: [[0,0],[0,0],[0,0],[0,0]], chatters: new Map() });
+                const m = models.get(d.m);
+                m.total += d.n;
+                m.qStats[d.qIdx][d.cat === 'tip' ? 1 : 0] += d.n;
+                if (!m.chatters.has(d.e)) m.chatters.set(d.e, { net: 0, qStats: [[0,0],[0,0],[0,0],[0,0]], items: [] });
+                const c = m.chatters.get(d.e);
                 c.net += d.n;
-                if(d.cat === 'message') c.msg++; else if(d.cat === 'tip') c.tip++;
+                c.qStats[d.qIdx][d.cat === 'tip' ? 1 : 0] += d.n;
                 c.items.push(d);
             });
 
-            const fragment = document.createDocumentFragment();
-            const sortedModels = [...models.entries()].sort((a,b) => b[1].total - a[1].total);
+            let entries = [...models.entries()];
+            if (bulkList.length > 0) {
+                const order = new Map(bulkList.map((n, i) => [n.toLowerCase(), i]));
+                entries.sort((a,b) => (order.get(a[0].toLowerCase()) ?? 999) - (order.get(b[0].toLowerCase()) ?? 999));
+            } else {
+                entries.sort((a,b) => b[1].total - a[1].total);
+            }
 
-            sortedModels.forEach(([modelName, mData], mIdx) => {
-                const mRow = document.createElement('tr');
-                mRow.className = 'model-header';
-                mRow.innerHTML = `<td class="py-4 px-6 font-bold text-slate-800" colspan="2">${modelName}</td>
-                                  <td class="py-4 px-6 text-right font-bold text-indigo-700" colspan="2">${fmt(mData.total)}</td>`;
-                fragment.appendChild(mRow);
+            entries.forEach(([name, mData], mIdx) => {
+                const mGroup = document.createElement('div');
+                mGroup.className = 'model-group';
+                
+                mGroup.innerHTML = `
+                    <div class="result-grid">
+                        <div class="font-extrabold text-slate-900 text-lg uppercase tracking-tight">${name}</div>
+                        <div><div class="q-container">${genQ(mData.qStats)}</div></div>
+                        <div class="text-right font-black text-blue-600 text-2xl tracking-tighter">$${mData.total.toLocaleString()}</div>
+                        <div class="text-center"><span class="text-[9px] font-bold text-slate-400 border border-slate-200 px-2 py-1 rounded">MODEL</span></div>
+                    </div>`;
 
-                const sortedChatters = [...mData.chatters.entries()].sort((a,b) => b[1].net - a[1].net);
-                sortedChatters.forEach(([cName, c], cIdx) => {
-                    const rowId = `details-${mIdx}-${cIdx}`;
-                    const cRow = document.createElement('tr');
-                    cRow.className = 'chatter-row border-b border-slate-100';
+                [...mData.chatters.entries()].sort((a,b) => b[1].net - a[1].net).forEach(([cName, c], cIdx) => {
+                    const rid = `d-${mIdx}-${cIdx}`;
+                    const cRow = document.createElement('div');
+                    cRow.className = `result-grid chatter-row`;
                     cRow.innerHTML = `
-                        <td class="py-4 px-10 font-semibold text-slate-700">${cName}</td>
-                        <td class="py-4 px-6 text-center text-xs text-slate-500"><b>${c.msg}</b> Msg / <b>${c.tip}</b> Tips</td>
-                        <td class="py-4 px-6 text-right font-bold text-emerald-600">${fmt(c.net)}</td>
-                        <td class="py-4 px-6 text-center"><button onclick="toggleDetails('${rowId}')" class="text-xs font-bold text-indigo-600 hover:underline">View History ▼</button></td>`;
-                    fragment.appendChild(cRow);
-
-                    const dRow = document.createElement('tr');
-                    dRow.id = rowId;
-                    dRow.className = 'detail-row';
-                    // We only render the inner table HTML when needed or in one block to save memory
-                    dRow.innerHTML = `<td colspan="4" class="p-0">
-                        <div class="px-10 py-4 bg-indigo-50/30">
-                            <table class="w-full text-xs">
-                                <thead><tr class="text-slate-400 border-b border-indigo-100 uppercase tracking-tighter font-bold">
-                                    <th class="py-2 text-left">Time</th><th class="py-2 text-left">Fan Name</th><th class="py-2 text-left">Category</th><th class="py-2 text-right">Net</th>
-                                </tr></thead>
-                                <tbody>
-                                    ${c.items.slice(0, 50).map(i => `
-                                        <tr class="border-b border-indigo-50/50">
-                                            <td class="py-2 text-slate-500">${new Date(i.t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                                            <td class="py-2 font-medium text-slate-700">${i.f}</td>
-                                            <td class="py-2"><span class="type-pill ${i.cat === 'message' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}">${i.type}</span></td>
-                                            <td class="py-2 text-right font-bold">${fmt(i.n)}</td>
-                                        </tr>`).join('')}
-                                        ${c.items.length > 50 ? `<tr><td colspan="4" class="text-center py-2 text-slate-400">Showing first 50 transactions...</td></tr>` : ''}
-                                </tbody>
+                        <div class="pl-10 font-semibold text-slate-500 text-sm italic">${cName}</div>
+                        <div><div class="q-container scale-90 origin-left">${genQ(c.qStats)}</div></div>
+                        <div class="text-right font-bold text-emerald-600 text-lg">$${c.net.toLocaleString()}</div>
+                        <div class="text-center"><button onclick="toggle('${rid}')" class="text-[8px] font-black uppercase text-indigo-500 hover:underline">History</button></div>
+                        <div id="${rid}" class="detail-pane">
+                            <table class="w-full text-[10px] text-slate-500">
+                                <tr class="border-b font-bold"><th class="text-left py-1">Quarter</th><th class="text-left py-1">Fan</th><th class="text-right py-1">Amount</th></tr>
+                                ${c.items.map(i => `<tr class="border-b"><td>Q${i.qIdx+1}</td><td>${i.f}</td><td class="text-right font-bold text-indigo-600">$${i.n}</td></tr>`).join('')}
                             </table>
-                        </div></td>`;
-                    fragment.appendChild(dRow);
+                        </div>`;
+                    mGroup.appendChild(cRow);
                 });
+                container.appendChild(mGroup);
             });
-            
-            // Perform one single DOM update
-            tbody.appendChild(fragment);
         }
 
-        function fmt(n) { return '$' + n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
-        function toISO(d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); }
+        function genQ(stats) {
+            return stats.map((q, i) => `
+                <div class="q-pill">
+                    <div class="q-label">Q${i+1}</div>
+                    <div class="flex items-center justify-center">
+                        <span class="val-m">$${Math.round(q[0])}</span>
+                        <span class="divider">/</span>
+                        <span class="val-t">$${Math.round(q[1])}</span>
+                    </div>
+                </div>`).join('');
+        }
+
+        function toggle(id) {
+            const el = document.getElementById(id);
+            el.style.display = el.style.display === 'grid' ? 'none' : 'grid';
+        }
     </script>
 </body>
 </html>
