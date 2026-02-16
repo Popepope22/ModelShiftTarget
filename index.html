@@ -1,298 +1,276 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agency Tracker v16 - Full Decimals & Eye-Ease</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Agency Tracker v26 - High Contrast</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 20px; }
+        body { font-family: system-ui, -apple-system, sans-serif; font-size: 12px; color: #334155; margin: 15px; background: #f1f5f9; line-height: 1.2; }
+        .top-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        .panel { border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         
-        /* 100% SCREEN WIDTH */
-        .app-wrapper { width: 100%; max-width: 100%; margin: 0 auto; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0 2px; table-layout: fixed; }
+        th { background: #334155; color: white; text-align: left; padding: 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+        td { padding: 8px; overflow: hidden; }
         
-        /* ZEBRA STRIPING - Eye Friendly Slate-50 */
-        .model-group:nth-child(even) { background-color: #f1f5f9; } 
-        .model-group:nth-child(odd) { background-color: #ffffff; }
-
-        .result-grid {
-            display: grid;
-            /* Proportions: Name(20%), Boxes(55%), Revenue(15%), Actions(10%) */
-            grid-template-columns: 20% 55% 15% 10%;
-            align-items: center;
-            padding: 1.25rem 2.5rem;
-            width: 100%;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .header-grid {
-            background-color: #1e293b;
-            color: #f8fafc;
-            font-weight: 800;
-            text-transform: uppercase;
-            font-size: 11px;
-            letter-spacing: 0.05em;
-            border-radius: 12px 12px 0 0;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        /* Q-Pill Design */
-        .q-container { display: flex; gap: 8px; width: 100%; }
-        .q-pill {
-            flex: 1; 
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 10px 4px;
-            text-align: center;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-        }
-
-        .q-label { font-size: 9px; font-weight: 800; color: #94a3b8; margin-bottom: 4px; }
-        .val-m { color: #2563eb; font-weight: 700; font-size: 11px; } 
-        .val-t { color: #059669; font-weight: 700; font-size: 11px; }
-        .divider { color: #cbd5e1; margin: 0 2px; font-weight: 300; }
-
-        .chatter-row { background-color: rgba(255,255,255,0.3); }
-        .detail-pane { display: none; background: #ffffff; grid-column: span 4; padding: 20px 50px; border-top: 1px solid #e2e8f0; }
+        /* MODEL ROW: Bold, White, Clean */
+        .model-row { background: #ffffff; font-weight: 800; color: #0f172a; font-size: 13px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .model-row td:first-child { border-radius: 4px 0 0 4px; border-left: 4px solid #0f172a; }
+        .model-row td:last-child { border-radius: 0 4px 4px 0; }
         
-        input, select, textarea { border: 1px solid #e2e8f0 !important; }
+        /* CHATTER ROW: Distinct Purple/Lavender Background */
+        .chatter-row { background: #f5f3ff !important; border-bottom: 1px solid #ddd6fe; }
+        .chatter-row td { border-bottom: 1px solid #ddd6fe; }
+        .chatter-row td:first-child { border-left: 6px solid #8b5cf6; padding-left: 30px; }
+        .chatter-name { color: #5b21b6; font-weight: 700; font-size: 11px; }
+        
+        .q-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(40px, 1fr)); gap: 4px; }
+        .q-item { border: 1px solid #ddd6fe; padding: 3px; text-align: center; border-radius: 4px; background: white; font-size: 10px; }
+        .val-m { color: #2563eb; display: block; font-weight: 600; }
+        .val-t { color: #059669; display: block; border-top: 1px solid #f1f5f9; margin-top: 2px; font-weight: 600; }
+        
+        .hidden { display: none !important; }
+        textarea, .input-text { width: 100%; font-size: 11px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: monospace; background: #fff; box-sizing: border-box; }
+        textarea { height: 65px; }
+        .input-text { padding: 6px; }
+        
+        .btn { padding: 5px 10px; cursor: pointer; background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 10px; font-weight: 700; transition: all 0.2s; }
+        .btn:hover { background: #f8fafc; border-color: #94a3b8; }
+        .btn-active { background: #8b5cf6 !important; color: #fff !important; border-color: #7c3aed !important; }
+        .btn-copy { background: #059669; color: white; border: none; margin-top: 5px; width: 100%; }
+        
+        .opt-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-weight: 800; font-size: 11px; color: #1e293b; }
+        .q-tag { background: #1e293b; color: #fff; padding: 2px 5px; border-radius: 4px; font-size: 9px; }
     </style>
 </head>
 <body>
 
-    <div class="app-wrapper">
-        <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-8">
-            <div class="xl:col-span-3 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <div class="flex flex-wrap gap-6 items-end mb-6">
-                    <div class="flex-1 min-w-[240px]">
-                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-2">Shift Template</label>
-                        <select id="timePresetSelect" onchange="loadPresets(this.value)" class="w-full rounded-xl p-3 text-sm bg-slate-50 outline-none">
-                            <option value="">-- Choose Shift --</option>
-                            <option value="bst-shift1">BST Shift 1 (05:01-13:00)</option>
-                            <option value="bst-shift2">BST Shift 2 (13:01-21:00)</option>
-                            <option value="bst-shift3">BST Shift 3 (21:01-05:00)</option>
-                            <option value="pht-shift1">PHT Shift 1 (13:01-21:00)</option>
-                            <option value="pht-shift2">PHT Shift 2 (21:01-05:00)</option>
-                            <option value="pht-shift3">PHT Shift 3 (05:01-13:00)</option>
-                        </select>
-                    </div>
-                    <div class="flex-1 min-w-[200px]">
-                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-2">Target Date</label>
-                        <input type="date" id="baseDate" class="w-full rounded-xl p-3 text-sm bg-slate-50 outline-none" onchange="updateQuarterDates()">
-                    </div>
-                    <label class="flex items-center px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold cursor-pointer hover:bg-indigo-700 transition">
-                        UPLOAD CSV <input type="file" id="csvInput" accept=".csv" class="hidden">
-                    </label>
-                </div>
-
-                <div id="quarterInputContainer" class="grid grid-cols-4 gap-4">
-                    <div class="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
-                        <span class="text-[9px] font-black text-blue-500 uppercase block mb-2">Q1 Window</span>
-                        <input type="datetime-local" id="q1Start" class="w-full text-[10px] p-2 rounded mb-1 border shadow-sm">
-                        <input type="datetime-local" id="q1End" class="w-full text-[10px] p-2 rounded border shadow-sm">
-                    </div>
-                    <div class="p-3 bg-amber-50/50 rounded-xl border border-amber-100">
-                        <span class="text-[9px] font-black text-amber-500 uppercase block mb-2">Q2 Window</span>
-                        <input type="datetime-local" id="q2Start" class="w-full text-[10px] p-2 rounded mb-1 border shadow-sm">
-                        <input type="datetime-local" id="q2End" class="w-full text-[10px] p-2 rounded border shadow-sm">
-                    </div>
-                    <div class="p-3 bg-cyan-50/50 rounded-xl border border-cyan-100">
-                        <span class="text-[9px] font-black text-cyan-500 uppercase block mb-2">Q3 Window</span>
-                        <input type="datetime-local" id="q3Start" class="w-full text-[10px] p-2 rounded mb-1 border shadow-sm">
-                        <input type="datetime-local" id="q3End" class="w-full text-[10px] p-2 rounded border shadow-sm">
-                    </div>
-                    <div class="p-3 bg-rose-50/50 rounded-xl border border-rose-100">
-                        <span class="text-[9px] font-black text-rose-500 uppercase block mb-2">Q4 Window</span>
-                        <input type="datetime-local" id="q4Start" class="w-full text-[10px] p-2 rounded mb-1 border shadow-sm">
-                        <input type="datetime-local" id="q4End" class="w-full text-[10px] p-2 rounded border shadow-sm">
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <label class="block text-[11px] font-bold text-indigo-500 uppercase mb-2">Custom Model Order</label>
-                <textarea id="modelFilter" placeholder="Paste names in order..." class="w-full h-[155px] text-xs p-3 rounded-xl bg-slate-50 outline-none font-medium" oninput="applyFilters()"></textarea>
+    <div class="top-grid">
+        <div class="panel">
+            <div class="opt-row">🔍 Search Focus</div>
+            <input type="text" id="searchInput" class="input-text" placeholder="Model or Chatter..." oninput="debounceApply()">
+            <div style="margin-top:10px; display: flex; flex-direction: column; gap: 5px;">
+                <label><input type="checkbox" id="checkUnassigned" checked onchange="applyFilters()"> Show Unassigned</label>
+                <label><input type="checkbox" id="checkChatters" checked onchange="toggleAllChatters()"> Show Chatters</label>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="result-grid header-grid">
-                <div>Model Name / Chatter</div>
-                <div>Quarterly Breakdown (Msg | Tips)</div>
-                <div class="text-right">Net Revenue</div>
-                <div class="text-center">Action</div>
+        <div class="panel">
+            <div class="opt-row">📁 Source & Shift</div>
+            <input type="file" id="csvInput" accept=".csv" style="width:100%; margin-bottom:5px;">
+            <select id="timePresetSelect" onchange="updateQuarterDates()" style="width:100%; padding:6px; border-radius: 4px; border: 1px solid #cbd5e1;">
+                <option value="bst-shift1">BST Shift 1 (05:01-13:00)</option>
+                <option value="bst-shift2">BST Shift 2 (13:01-21:00)</option>
+                <option value="bst-shift3">BST Shift 3 (21:01-05:00)</option>
+            </select>
+        </div>
+
+        <div class="panel" style="grid-column: span 2;">
+            <div class="opt-row">📝 Report Settings 
+                <button id="hideRepChatter" class="btn" onclick="toggleReportPart('Chatter')">Hide 'Chatter'</button>
+                <button id="hideRepSplit" class="btn" onclick="toggleReportPart('Split')">Hide Tips/Msg</button>
             </div>
-            <div id="mainTableBody">
-                <div class="py-32 text-center text-slate-300 font-bold uppercase tracking-widest">Waiting for Data...</div>
-            </div>
+            <textarea id="reportOutput" readonly onclick="this.select()" style="height: 80px;"></textarea>
+            <button class="btn btn-copy" onclick="copyReport()">Copy to Clipboard</button>
         </div>
     </div>
 
-    <script>
-        let rawData = [];
-        const SHIFT_PRESETS = {
-            "bst-shift1": [[5,1,7,0],[7,1,9,0],[9,1,11,0],[11,1,13,0]],
-            "bst-shift2": [[13,1,15,0],[15,1,17,0],[17,1,19,0],[19,1,21,0]],
-            "bst-shift3": [[21,1,23,0],[23,1,1,0],[1,1,3,0],[3,1,5,0]],
-            "pht-shift1": [[13,1,15,0],[15,1,17,0],[17,1,19,0],[19,1,21,0]],
-            "pht-shift2": [[21,1,23,0],[23,1,1,0],[1,1,3,0],[3,1,5,0]],
-            "pht-shift3": [[5,1,7,0],[7,1,9,0],[9,1,11,0],[11,1,13,0]]
-        };
+    <div class="panel" style="margin-bottom:15px; display:flex; gap:15px; align-items:center; justify-content: space-between;">
+        <div>
+            <strong>Active Windows:</strong>
+            <label><input type="checkbox" class="q-toggle" value="0" checked onchange="applyFilters()"> Q1</label>
+            <label><input type="checkbox" class="q-toggle" value="1" checked onchange="applyFilters()"> Q2</label>
+            <label><input type="checkbox" class="q-toggle" value="2" checked onchange="applyFilters()"> Q3</label>
+            <label><input type="checkbox" class="q-toggle" value="3" checked onchange="applyFilters()"> Q4</label>
+        </div>
+        <div style="flex-grow: 1; max-width: 450px;">
+            <textarea id="modelFilter" oninput="debounceApply()" placeholder="Sort Models (one per line)..."></textarea>
+        </div>
+    </div>
 
-        function loadPresets(val) { if (val) updateQuarterDates(); }
-        function toISO(d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); }
+    <div id="qWindows" class="hidden"></div>
 
-        function updateQuarterDates() {
-            const shiftKey = document.getElementById('timePresetSelect').value;
-            const baseDateVal = document.getElementById('baseDate').value;
-            if (!shiftKey || !baseDateVal) return;
-            const quarters = SHIFT_PRESETS[shiftKey];
-            const [y, m, d] = baseDateVal.split('-').map(Number);
-            quarters.forEach((q, idx) => {
-                let start = new Date(y, m - 1, d, q[0], q[1]);
-                let end = new Date(y, m - 1, d, q[2], q[3]);
-                if (idx > 0) {
-                    const prevStart = new Date(document.getElementById(`q${idx}Start`).value);
-                    if (start < prevStart) start.setDate(start.getDate() + 1);
-                }
-                if (end <= start) end.setDate(end.getDate() + 1);
-                document.getElementById(`q${idx+1}Start`).value = toISO(start);
-                document.getElementById(`q${idx+1}End`).value = toISO(end);
-            });
-            applyFilters();
-        }
+    <table id="trackerTable">
+        <thead>
+            <tr>
+                <th style="width: 25%; border-radius: 6px 0 0 6px;">Name</th>
+                <th style="width: 45%;">Q1 | Q2 | Q3 | Q4</th>
+                <th style="width: 15%; text-align: right;">Total Net</th>
+                <th style="width: 15%; text-align: center; border-radius: 0 6px 6px 0;">Tools</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
 
-        document.getElementById('csvInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            Papa.parse(file, {
-                header: true, skipEmptyLines: true,
-                complete: function(results) { processData(results.data); }
-            });
+<script>
+    let rawData = [];
+    let chattersVisible = true;
+    let debounceTimer;
+    let reportConfig = { hideChatter: false, hideSplit: false };
+
+    const SHIFT_PRESETS = {
+        "bst-shift1": [[5,1,7,0],[7,1,9,0],[9,1,11,0],[11,1,13,0]],
+        "bst-shift2": [[13,1,15,0],[15,1,17,0],[17,1,19,0],[19,1,21,0]],
+        "bst-shift3": [[21,1,23,0],[23,1,1,0],[1,1,3,0],[3,1,5,0]]
+    };
+
+    const qW = document.getElementById('qWindows');
+    for(let i=1; i<=4; i++) { qW.innerHTML += `<input type="datetime-local" id="q${i}Start"><input type="datetime-local" id="q${i}End">`; }
+
+    function copyReport() {
+        const el = document.getElementById('reportOutput');
+        el.select();
+        document.execCommand('copy');
+        alert("Report copied!");
+    }
+
+    function toggleReportPart(type) {
+        if(type === 'Chatter') reportConfig.hideChatter = !reportConfig.hideChatter;
+        if(type === 'Split') reportConfig.hideSplit = !reportConfig.hideSplit;
+        document.getElementById('hideRep'+type).classList.toggle('btn-active', reportConfig['hide'+type]);
+        applyFilters();
+    }
+
+    function updateQuarterDates() {
+        const shiftKey = document.getElementById('timePresetSelect').value;
+        const baseDate = rawData.length > 0 ? rawData[0].t.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+        const [y, m, d] = baseDate.split('-').map(Number);
+        SHIFT_PRESETS[shiftKey].forEach((q, idx) => {
+            let s = new Date(y, m - 1, d, q[0], q[1]);
+            let e = new Date(y, m - 1, d, q[2], q[3]);
+            if (idx > 0) { 
+                const prev = new Date(document.getElementById(`q${idx}Start`).value);
+                if (s < prev) s.setDate(s.getDate()+1);
+            }
+            if (e <= s) e.setDate(e.getDate()+1);
+            const iso = (dt) => new Date(dt.getTime() - dt.getTimezoneOffset()*60000).toISOString().slice(0,16);
+            document.getElementById(`q${idx+1}Start`).value = iso(s);
+            document.getElementById(`q${idx+1}End`).value = iso(e);
         });
+        applyFilters();
+    }
 
-        function processData(data) {
-            rawData = data.map(row => {
-                const dateStr = row['Date & time Europe/London'];
-                if (!dateStr) return null;
-                const net = parseFloat((row['Net revenue'] || '0').replace(/[$,]/g, ''));
-                let emp = (row['Employee'] || '').trim();
-                return {
-                    t: new Date(dateStr.replace(' Europe/London', '')).getTime(),
-                    e: emp === '' ? 'Unassigned' : emp,
-                    m: (row['Creator'] || 'Unknown').trim(),
-                    f: (row['Fan'] || 'Anonymous').trim(),
-                    n: isNaN(net) ? 0 : net,
-                    cat: (row['Type'] || '').toLowerCase().includes('tip') ? 'tip' : 'message'
-                };
-            }).filter(x => x);
-            if (rawData.length > 0) {
-                document.getElementById('baseDate').value = new Date(rawData[0].t).toISOString().split('T')[0];
+    document.getElementById('csvInput').addEventListener('change', e => {
+        Papa.parse(e.target.files[0], {
+            header: true, skipEmptyLines: true,
+            complete: res => {
+                rawData = res.data.map(row => {
+                    const dStr = row['Date & time Europe/London'];
+                    return dStr ? {
+                        t: new Date(dStr.replace(' Europe/London', '')),
+                        e: (row['Employee'] || '').trim() || 'Unassigned',
+                        m: (row['Creator'] || 'Unknown').trim(),
+                        f: (row['Fan'] || 'Anon').trim(),
+                        n: parseFloat((row['Net revenue'] || '0').replace(/[$,]/g, '')) || 0,
+                        cat: (row['Type'] || '').toLowerCase().includes('tip') ? 'tip' : 'message'
+                    } : null;
+                }).filter(x => x);
                 updateQuarterDates();
             }
+        });
+    });
+
+    function debounceApply() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyFilters, 300);
+    }
+
+    function applyFilters() {
+        const getT = (id) => new Date(document.getElementById(id).value).getTime();
+        const ranges = [{s:getT('q1Start'),e:getT('q1End')}, {s:getT('q2Start'),e:getT('q2End')}, {s:getT('q3Start'),e:getT('q3End')}, {s:getT('q4Start'),e:getT('q4End')}];
+        const order = document.getElementById('modelFilter').value.split('\n').map(x => x.trim().toLowerCase()).filter(x => x);
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const activeQs = Array.from(document.querySelectorAll('.q-toggle:checked')).map(cb => parseInt(cb.value));
+        const showUnassigned = document.getElementById('checkUnassigned').checked;
+
+        const filtered = rawData.filter(d => {
+            const qIdx = ranges.findIndex(r => d.t.getTime() >= r.s && d.t.getTime() <= r.e);
+            if (qIdx === -1) return false;
+            d.qIdx = qIdx;
+            if (!activeQs.includes(qIdx)) return false;
+            const matchesSearch = search === '' || d.m.toLowerCase().includes(search) || d.e.toLowerCase().includes(search);
+            return matchesSearch;
+        });
+        render(filtered, order, activeQs, showUnassigned);
+    }
+
+    function render(data, order, activeQs, showUnassigned) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        const models = new Map();
+
+        data.forEach(d => {
+            if (!models.has(d.m)) models.set(d.m, { total: 0, qStats: [[0,0],[0,0],[0,0],[0,0]], chatters: new Map() });
+            const m = models.get(d.m);
+            m.total += d.n;
+            m.qStats[d.qIdx][d.cat === 'tip' ? 1 : 0] += d.n;
+            if (!m.chatters.has(d.e)) m.chatters.set(d.e, { total: 0, msg:0, tip:0, qStats: [[0,0],[0,0],[0,0],[0,0]], items: [] });
+            const c = m.chatters.get(d.e);
+            c.total += d.n;
+            if(d.cat === 'tip') c.tip += d.n; else c.msg += d.n;
+            c.qStats[d.qIdx][d.cat === 'tip' ? 1 : 0] += d.n;
+            c.items.push(d);
+        });
+
+        let sortedModels = [...models.entries()];
+        if(order.length > 0) {
+            sortedModels.sort((a,b) => {
+                let ai = order.indexOf(a[0].toLowerCase());
+                let bi = order.indexOf(b[0].toLowerCase());
+                if(ai === -1) ai = 999; if(bi === -1) bi = 999;
+                return ai - bi;
+            });
         }
 
-        function applyFilters() {
-            const getQ = (id) => new Date(document.getElementById(id).value).getTime();
-            const ranges = [
-                {s: getQ('q1Start'), e: getQ('q1End')}, {s: getQ('q2Start'), e: getQ('q2End')},
-                {s: getQ('q3Start'), e: getQ('q3End')}, {s: getQ('q4Start'), e: getQ('q4End')}
-            ];
-            const bulkText = document.getElementById('modelFilter').value;
-            const bulkList = bulkText.split('\n').map(x => x.trim()).filter(x => x);
+        let repText = "";
+        sortedModels.forEach(([mName, mData], mIdx) => {
+            const mId = `m-${mIdx}`;
+            tbody.insertAdjacentHTML('beforeend', `<tr class="model-row"><td>${mName}</td><td><div class="q-grid">${genQs(mData.qStats, activeQs)}</div></td><td align="right">$${mData.total.toFixed(2)}</td><td align="center"><button class="btn" onclick="toggleSub('${mId}')">Chatters</button></td></tr>`);
 
-            const filtered = rawData.filter(d => {
-                const qIdx = ranges.findIndex(r => d.t >= r.s && d.t <= r.e);
-                if (qIdx === -1) return false;
-                d.qIdx = qIdx;
-                const bulkMatch = bulkList.length === 0 || bulkList.some(b => b.toLowerCase() === d.m.toLowerCase());
-                return bulkMatch;
-            });
-            render(filtered, bulkList);
-        }
-
-        function render(data, bulkList) {
-            const container = document.getElementById('mainTableBody');
-            container.innerHTML = '';
-            const models = new Map();
-
-            data.forEach(d => {
-                if (!models.has(d.m)) models.set(d.m, { total: 0, qStats: [[0,0],[0,0],[0,0],[0,0]], chatters: new Map() });
-                const m = models.get(d.m);
-                m.total += d.n;
-                m.qStats[d.qIdx][d.cat === 'tip' ? 1 : 0] += d.n;
-                if (!m.chatters.has(d.e)) m.chatters.set(d.e, { net: 0, qStats: [[0,0],[0,0],[0,0],[0,0]], items: [] });
-                const c = m.chatters.get(d.e);
-                c.net += d.n;
-                c.qStats[d.qIdx][d.cat === 'tip' ? 1 : 0] += d.n;
-                c.items.push(d);
-            });
-
-            let entries = [...models.entries()];
-            if (bulkList.length > 0) {
-                const order = new Map(bulkList.map((n, i) => [n.toLowerCase(), i]));
-                entries.sort((a,b) => (order.get(a[0].toLowerCase()) ?? 999) - (order.get(b[0].toLowerCase()) ?? 999));
-            } else {
-                entries.sort((a,b) => b[1].total - a[1].total);
-            }
-
-            entries.forEach(([name, mData], mIdx) => {
-                const mGroup = document.createElement('div');
-                mGroup.className = 'model-group';
+            const sChatters = [...mData.chatters.entries()].sort((a,b)=>b[1].total - a[1].total);
+            sChatters.forEach(([cName, cData], cIdx) => {
+                if (cName === 'Unassigned' && !showUnassigned) return;
                 
-                mGroup.innerHTML = `
-                    <div class="result-grid">
-                        <div class="font-extrabold text-slate-900 text-lg uppercase tracking-tight">${name}</div>
-                        <div><div class="q-container">${genQ(mData.qStats)}</div></div>
-                        <div class="text-right font-black text-indigo-600 text-2xl">$${fmt(mData.total)}</div>
-                        <div class="text-center"><span class="text-[9px] font-bold text-slate-400 border border-slate-200 px-2 py-1 rounded">MODEL</span></div>
-                    </div>`;
+                if(cName !== 'Unassigned') {
+                    let line = reportConfig.hideChatter ? "" : "Chatter - ";
+                    line += `${cName} (${mName}) - $${cData.total.toFixed(2)}`;
+                    if(!reportConfig.hideSplit) line += ` ($${cData.tip.toFixed(2)} Tips / $${cData.msg.toFixed(2)} Msg)`;
+                    repText += line + "\n";
+                }
 
-                [...mData.chatters.entries()].sort((a,b) => b[1].net - a[1].net).forEach(([cName, c], cIdx) => {
-                    const rid = `d-${mIdx}-${cIdx}`;
-                    const cRow = document.createElement('div');
-                    cRow.className = `result-grid chatter-row`;
-                    cRow.innerHTML = `
-                        <div class="pl-12 font-semibold text-slate-500 text-sm italic">${cName}</div>
-                        <div><div class="q-container scale-95 origin-left">${genQ(c.qStats)}</div></div>
-                        <div class="text-right font-bold text-emerald-600 text-lg">$${fmt(c.net)}</div>
-                        <div class="text-center"><button onclick="toggle('${rid}')" class="text-[8px] font-black uppercase text-slate-400 hover:text-indigo-500 transition">History</button></div>
-                        <div id="${rid}" class="detail-pane">
-                            <table class="w-full text-[10px] text-slate-500">
-                                <tr class="border-b font-bold"><th class="text-left py-2">Quarter</th><th class="text-left py-2">Fan</th><th class="text-right py-2">Amount</th></tr>
-                                ${c.items.map(i => `<tr class="border-b"><td class="py-1">Q${i.qIdx+1}</td><td>${i.f}</td><td class="text-right font-bold text-indigo-600">$${fmt(i.n)}</td></tr>`).join('')}
-                            </table>
-                        </div>`;
-                    mGroup.appendChild(cRow);
-                });
-                container.appendChild(mGroup);
+                const histId = `h-${mIdx}-${cIdx}`;
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="chatter-row ${mId} ${chattersVisible ? '' : 'hidden'}">
+                        <td class="chatter-name">${cName}</td>
+                        <td><div class="q-grid">${genQs(cData.qStats, activeQs)}</div></td>
+                        <td align="right" style="color:#1e293b; font-weight: 700;">$${cData.total.toFixed(2)}</td>
+                        <td align="center"><button class="btn" style="font-size:9px" onclick="toggleSub('${histId}')">History</button></td>
+                    </tr>
+                    <tr id="${histId}" class="hidden"><td colspan="4" style="background:#fff; padding:15px; border:1px solid #e2e8f0; border-radius: 8px;">
+                        <table width="100%" style="font-size:10px;">
+                            ${cData.items.sort((a,b)=>a.t-b.t).map(i=>`<tr><td>${i.t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false})}</td><td><span class="q-tag">Q${i.qIdx+1}</span></td><td>${i.f}</td><td align="right" style="font-weight:700;">$${i.n.toFixed(2)}</td></tr>`).join('')}
+                        </table>
+                    </td></tr>`);
             });
-        }
+        });
+        document.getElementById('reportOutput').value = repText;
+    }
 
-        // UPDATED: Now shows full decimals inside the Q boxes
-        function genQ(stats) {
-            return stats.map((q, i) => `
-                <div class="q-pill">
-                    <div class="q-label">QUARTER ${i+1}</div>
-                    <div class="flex items-center justify-center">
-                        <span class="val-m">${fmt(q[0])}</span>
-                        <span class="divider">/</span>
-                        <span class="val-t">${fmt(q[1])}</span>
-                    </div>
-                </div>`).join('');
-        }
+    function genQs(stats, activeQs) {
+        return activeQs.map(i => `<div class="q-item"><span style="color:#94a3b8; font-size:8px;">Q${i+1}</span><span class="val-m">${stats[i][0].toFixed(2)}</span><span class="val-t">${stats[i][1].toFixed(2)}</span></div>`).join('');
+    }
 
-        function fmt(n) { return n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+    function toggleSub(id) {
+        const el = document.getElementById(id);
+        if (el) { el.classList.toggle('hidden'); return; }
+        document.querySelectorAll('.' + id).forEach(r => r.classList.toggle('hidden'));
+    }
 
-        function toggle(id) {
-            const el = document.getElementById(id);
-            el.style.display = el.style.display === 'grid' ? 'none' : 'grid';
-        }
-    </script>
+    function toggleAllChatters() {
+        chattersVisible = document.getElementById('checkChatters').checked;
+        applyFilters();
+    }
+</script>
 </body>
 </html>
