@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Agency Tracker v26 - High Contrast</title>
+    <title>Agency Tracker v26.1 - Shift Fix</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; font-size: 12px; color: #334155; margin: 15px; background: #f1f5f9; line-height: 1.2; }
@@ -14,14 +13,10 @@
         th { background: #334155; color: white; text-align: left; padding: 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
         td { padding: 8px; overflow: hidden; }
         
-        /* MODEL ROW: Bold, White, Clean */
         .model-row { background: #ffffff; font-weight: 800; color: #0f172a; font-size: 13px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .model-row td:first-child { border-radius: 4px 0 0 4px; border-left: 4px solid #0f172a; }
-        .model-row td:last-child { border-radius: 0 4px 4px 0; }
         
-        /* CHATTER ROW: Distinct Purple/Lavender Background */
         .chatter-row { background: #f5f3ff !important; border-bottom: 1px solid #ddd6fe; }
-        .chatter-row td { border-bottom: 1px solid #ddd6fe; }
         .chatter-row td:first-child { border-left: 6px solid #8b5cf6; padding-left: 30px; }
         .chatter-name { color: #5b21b6; font-weight: 700; font-size: 11px; }
         
@@ -37,7 +32,7 @@
         
         .btn { padding: 5px 10px; cursor: pointer; background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 10px; font-weight: 700; transition: all 0.2s; }
         .btn:hover { background: #f8fafc; border-color: #94a3b8; }
-        .btn-active { background: #8b5cf6 !important; color: #fff !important; border-color: #7c3aed !important; }
+        .btn-active { background: #8b5cf6 !important; color: #fff !important; }
         .btn-copy { background: #059669; color: white; border: none; margin-top: 5px; width: 100%; }
         
         .opt-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-weight: 800; font-size: 11px; color: #1e293b; }
@@ -134,16 +129,33 @@
 
     function updateQuarterDates() {
         const shiftKey = document.getElementById('timePresetSelect').value;
-        const baseDate = rawData.length > 0 ? rawData[0].t.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
-        const [y, m, d] = baseDate.split('-').map(Number);
+        if (rawData.length === 0) return;
+
+        // Determine base date from first row
+        let baseDate = new Date(rawData[0].t);
+        
+        // SHIFT 3 FIX: If current row is early morning (e.g. 03:00 AM Feb 27),
+        // the shift actually started on Feb 26 21:00 PM.
+        if (shiftKey === 'bst-shift3' && baseDate.getHours() < 12) {
+            baseDate.setDate(baseDate.getDate() - 1);
+        }
+
+        const y = baseDate.getFullYear();
+        const m = baseDate.getMonth();
+        const d = baseDate.getDate();
+
         SHIFT_PRESETS[shiftKey].forEach((q, idx) => {
-            let s = new Date(y, m - 1, d, q[0], q[1]);
-            let e = new Date(y, m - 1, d, q[2], q[3]);
-            if (idx > 0) { 
-                const prev = new Date(document.getElementById(`q${idx}Start`).value);
-                if (s < prev) s.setDate(s.getDate()+1);
+            let s = new Date(y, m, d, q[0], q[1]);
+            let e = new Date(y, m, d, q[2], q[3]);
+
+            // Rollover logic for quarters crossing midnight
+            if (idx > 0 && q[0] < SHIFT_PRESETS[shiftKey][0][0]) {
+                s.setDate(s.getDate() + 1);
             }
-            if (e <= s) e.setDate(e.getDate()+1);
+            if (e <= s) {
+                e.setDate(e.getDate() + 1);
+            }
+
             const iso = (dt) => new Date(dt.getTime() - dt.getTimezoneOffset()*60000).toISOString().slice(0,16);
             document.getElementById(`q${idx+1}Start`).value = iso(s);
             document.getElementById(`q${idx+1}End`).value = iso(e);
